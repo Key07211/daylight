@@ -1,0 +1,19 @@
+node_modules/
+dist/
+data/
+*.log
+.runtime/
+release/
+.env
+.env.*
+!.env.example
+.codex/
+*.bak
+*.backup
+Thumbs.db
+.DS_Store
+# Earlier design captures may contain personal task data.
+design/*.png
+design/*.webp
+design/figma-state.json
+design/figma-composition-state.json

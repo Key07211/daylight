@@ -1,0 +1,101 @@
+{
+  "name": "daylight-local-tasks",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "日光清单 · 本地任务与 Codex 调度",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "node server/index.mjs",
+    "test": "node --test tests/*.test.mjs integrations/*.test.mjs",
+    "mcp": "node integrations/mcp-server.mjs",
+    "desktop": "electron .",
+    "desktop:preview": "npm run build && electron desktop/preview.cjs",
+    "desktop:icons": "node desktop/create-icons.mjs",
+    "package:win": "npm run build && npm run desktop:icons && electron-builder --win nsis portable --x64"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "sharp": "^0.35.5",
+    "vite": "^7.1.0"
+  },
+  "main": "desktop/main.cjs",
+  "author": "Daylight",
+  "build": {
+    "appId": "com.daylight.tasks",
+    "productName": "Daylight",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "desktop/assets"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/main.cjs",
+      "desktop/ui-smoke.cjs",
+      "desktop/preload.cjs",
+      "desktop/codex-path.cjs",
+      "desktop/mcp-connection.cjs",
+      "desktop/mcp-controller.cjs",
+      "desktop/mcp-migration.cjs",
+      "desktop/assets/**/*",
+      "server/**/*.mjs",
+      "server/notify.ps1",
+      "integrations/mcp-server.mjs",
+      "package.json"
+    ],
+    "win": {
+      "icon": "desktop/assets/icon.ico",
+      "executableName": "Daylight",
+      "signAndEditExecutable": true,
+      "artifactName": "Daylight-${version}-${arch}.${ext}",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "runAfterFinish": false,
+      "deleteAppDataOnUninstall": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": false,
+      "createDesktopShortcut": true,
+      "perMachine": false,
+      "shortcutName": "Daylight",
+      "createStartMenuShortcut": true,
+      "oneClick": false,
+      "artifactName": "Daylight-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Daylight-Portable-${version}.${ext}",
+      "requestExecutionLevel": "user"
+    },
+    "npmRebuild": false
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Key07211/daylight.git"
+  },
+  "homepage": "https://github.com/Key07211/daylight#readme"
+}

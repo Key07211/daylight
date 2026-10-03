@@ -1,0 +1,12 @@
+.rain-field { position:fixed; inset:0; z-index:1; overflow:hidden; pointer-events:none; user-select:none; isolation:isolate; opacity:calc(.38 + var(--field-rain-intensity,0) * .55); --field-rain-haze:156 187 194; --field-rain-shine:226 240 239; }
+.rain-field[data-night="true"] { --field-rain-haze:66 101 149; --field-rain-shine:129 176 222; }
+.rain-field::before { content:""; position:absolute; inset:-6%; background:radial-gradient(ellipse at 18% 9%,rgb(var(--field-rain-haze) / .085),transparent 54%),radial-gradient(ellipse at 84% 86%,rgb(var(--field-rain-haze) / .075),transparent 47%),linear-gradient(155deg,transparent 23%,rgb(var(--field-rain-shine) / .055),transparent 77%); animation:rain-field-breathe 24s ease-in-out infinite alternate; }
+.rain-field[data-storm="true"]::before { background:radial-gradient(ellipse at 18% -5%,rgb(var(--field-rain-haze) / .18),transparent 60%),linear-gradient(158deg,rgb(var(--field-rain-haze) / .08),transparent 65%); }
+.rain-field-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.rain-field-reflection { position:absolute; width:45%; height:150%; top:-25%; left:-50%; background:linear-gradient(90deg,transparent,rgb(var(--field-rain-shine) / .07) 45%,rgb(var(--field-rain-shine) / .1) 54%,transparent); transform:skewX(-23deg); animation:rain-field-reflection 34s ease-in-out infinite; opacity:calc(.22 + var(--glass-glow,.65) * .38); }
+@keyframes rain-field-breathe { from { transform:translate(-1%,0); opacity:.7; } to { transform:translate(1%,1%); opacity:1; } }
+@keyframes rain-field-reflection { 0%,15% { transform:translateX(0) skewX(-23deg); } 86%,100% { transform:translateX(370%) skewX(-23deg); } }
+.rain-field[data-paused="true"]::before, .rain-field[data-paused="true"] .rain-field-reflection { animation-play-state:paused !important; }
+.rain-field[data-animated="false"]::before, .rain-field[data-animated="false"] .rain-field-reflection, html[data-glass-motion="off"] .rain-field::before, html[data-glass-motion="off"] .rain-field .rain-field-reflection { animation:none !important; }
+@media (prefers-reduced-motion:reduce) { .rain-field::before, .rain-field .rain-field-reflection { animation:none !important; } }
+@media (forced-colors:active) { .rain-field { display:none; } }

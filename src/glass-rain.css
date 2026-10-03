@@ -1,0 +1,217 @@
+.glass-rain {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+  opacity: calc(.2 + var(--rain-intensity, 0) * .68);
+  --rain-light: var(--material-edge, 239 245 240);
+  --rain-tone: var(--material-tint, 167 191 187);
+  --rain-shadow: 57 82 99;
+  --rain-bead-scale: 1.75;
+  --rain-runner-scale: 1;
+  --rain-seam-inset: 2px;
+}
+.nav-item .glass-rain, .theme-toggle .glass-rain, .language-options .glass-rain {
+  --rain-bead-scale: 1.2;
+  --rain-runner-scale: .72;
+  --rain-seam-inset: 1.5px;
+}
+.glass-rain::before {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: -48%;
+  width: 47%;
+  height: 190%;
+  border-radius: 50%;
+  background: linear-gradient(96deg, transparent 10%, rgb(var(--rain-tone) / .05) 43%, rgb(var(--rain-light) / .09) 51%, transparent 85%);
+  transform: translateX(0) rotate(24deg);
+  animation: glass-rain-reflection 27s ease-in-out infinite;
+  opacity: calc(.2 + var(--glass-glow, .65) * .35);
+}
+.glass-rain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 14% -7%, rgb(var(--rain-tone) / .06), transparent 42%);
+  box-shadow: inset 0 -1px .6px rgb(var(--rain-shadow) / .045);
+}
+.rain-condensation, .rain-bead { display: block; position: absolute; }
+.rain-condensation {
+  border-radius: 48% 52% 43% 57%;
+  background: rgb(var(--rain-tone) / .24);
+  box-shadow: inset .25px .35px .3px rgb(var(--rain-light) / .31), inset -.5px -.6px .4px rgb(var(--rain-shadow) / .2);
+}
+.rain-bead, .rain-runner-drop {
+  border-radius: var(--drop-shape);
+  border: .55px solid rgb(var(--rain-shadow) / calc(var(--drop-shadow) * .7));
+  background: radial-gradient(ellipse at var(--drop-light-x) var(--drop-light-y), rgb(var(--rain-light) / var(--drop-glint)), transparent 33%),
+    radial-gradient(ellipse at var(--drop-caustic-x) 83%, rgb(var(--rain-tone) / calc(var(--drop-glint) * .74)), transparent 38%),
+    linear-gradient(var(--drop-light-angle), rgb(var(--rain-tone) / var(--drop-refraction)) 7%, transparent 44%, rgb(var(--rain-shadow) / var(--drop-refraction)) 62%, rgb(var(--rain-light) / calc(var(--drop-refraction) * 1.2)));
+  box-shadow: inset .6px .8px .8px rgb(var(--rain-light) / calc(var(--drop-glint) * .78)),
+    inset -.8px -1.3px .9px rgb(var(--rain-shadow) / var(--drop-shadow)),
+    0 1.1px 1.3px rgb(var(--rain-shadow) / calc(var(--drop-shadow) * .48));
+}
+.rain-bead {
+  width: calc(var(--bead-width) * var(--rain-bead-scale));
+  height: calc(var(--bead-height) * var(--rain-bead-scale));
+  transform-origin: 50% 80%;
+  animation: glass-bead-condense 21s ease-in-out infinite;
+}
+.rain-bead::before, .rain-runner-drop::before {
+  content: "";
+  position: absolute;
+  left: var(--drop-caustic-x);
+  bottom: 10%;
+  width: 29%;
+  height: 9%;
+  border-radius: 50%;
+  background: rgb(var(--rain-tone) / calc(var(--drop-glint) * .75));
+  transform: translateX(-50%) rotate(var(--drop-glint-angle));
+}
+.rain-bead::after, .rain-runner-drop::after {
+  content: "";
+  position: absolute;
+  top: var(--drop-light-y);
+  left: var(--drop-light-x);
+  width: var(--drop-highlight-size);
+  height: 25%;
+  border-radius: 60% 40% 68% 32%;
+  border-top: .7px solid rgb(var(--rain-light) / calc(var(--drop-glint) * 1.1));
+  border-left: .5px solid rgb(var(--rain-light) / calc(var(--drop-glint) * .57));
+  transform: translate(-50%, -50%) rotate(var(--drop-glint-angle));
+}
+.rain-bead[data-drop-optics="soft"]::after { opacity: .45; border-left-color: transparent; }
+.rain-bead[data-drop-optics="clear"] { background-color: rgb(var(--rain-tone) / .018); }
+.rain-bead[data-drop-optics="tonal"]::before { opacity: .4; }
+
+/* A lane's local height defines the journey; its bottom is the glass seam. */
+.rain-runner-path {
+  position: absolute;
+  bottom: var(--rain-seam-inset);
+  width: calc(9.4px * var(--rain-runner-scale));
+  --runner-height: calc(15.2px * var(--rain-runner-scale));
+  --rain-tail-length: clamp(24px, 23%, 68px);
+}
+.rain-runner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: glass-rain-to-seam var(--rain-duration) cubic-bezier(.35, .02, .68, .5) var(--rain-delay) infinite;
+}
+.rain-runner::before {
+  content: "";
+  position: absolute;
+  top: calc(6px - var(--rain-tail-length));
+  left: 17%;
+  width: 65%;
+  height: var(--rain-tail-length);
+  background: linear-gradient(to bottom, transparent 2%, rgb(var(--rain-tone) / .025) 26%, rgb(var(--rain-light) / calc(var(--drop-glint) * .19)) 62%, rgb(var(--rain-shadow) / .035) 83%, rgb(var(--rain-tone) / calc(var(--drop-glint) * .53)));
+  clip-path: polygon(53% 0,56% 16%,40% 32%,57% 48%,55% 64%,70% 79%,89% 100%,12% 100%,38% 80%,41% 65%,38% 48%,26% 32%,47% 16%);
+  transform-origin: 50% 100%;
+  animation: glass-wet-tail var(--rain-duration) ease-in-out var(--rain-delay) infinite;
+}
+.rain-runner-drop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--runner-height);
+  transform-origin: 50% 100%;
+  animation: glass-drop-absorb var(--rain-duration) ease-in-out var(--rain-delay) infinite;
+}
+.rain-edge-pool {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 190%;
+  height: 2.2px;
+  border-radius: 60% 45% 8% 8%;
+  background: linear-gradient(to bottom, rgb(var(--rain-tone) / calc(var(--drop-glint) * .58)), rgb(var(--rain-shadow) / calc(var(--drop-shadow) * .7)));
+  box-shadow: 0 .65px .5px rgb(var(--rain-shadow) / .1), inset 0 .5px .5px rgb(var(--rain-light) / calc(var(--drop-glint) * .3));
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: glass-seam-absorb var(--rain-duration) ease-in-out var(--rain-delay) infinite;
+}
+[data-theme="night"] .glass-rain { --rain-shadow: 9 24 48; }
+[data-theme="night"] .rain-bead, [data-theme="night"] .rain-runner-drop {
+  border-color: rgb(var(--rain-tone) / calc(var(--drop-glint) * .22));
+}
+
+@keyframes glass-bead-condense {
+  0%, 100% { opacity: calc(var(--drop-opacity) * .67); transform: scale(.87, .91); }
+  43% { opacity: var(--drop-opacity); transform: scale(1, 1); }
+  68% { opacity: calc(var(--drop-opacity) * .83); transform: scale(.97, 1.025); }
+}
+@keyframes glass-rain-to-seam {
+  0%, 7% { transform: translate(0, 0); opacity: 0; }
+  21% { transform: translate(0, 0); opacity: var(--drop-opacity); }
+  42% { transform: translate(var(--rain-sway), calc(3% - var(--runner-height) * .03)); opacity: var(--drop-opacity); }
+  56% { transform: translate(0, calc(17% - var(--runner-height) * .17)); opacity: var(--drop-opacity); }
+  70% { transform: translate(var(--rain-sway), calc(42% - var(--runner-height) * .42)); opacity: var(--drop-opacity); }
+  80% { transform: translate(0, calc(77% - var(--runner-height) * .77)); opacity: var(--drop-opacity); }
+  87%, 96% { transform: translate(0, calc(100% - var(--runner-height))); opacity: var(--drop-opacity); }
+  100% { transform: translate(0, calc(100% - var(--runner-height))); opacity: 0; }
+}
+@keyframes glass-drop-absorb {
+  0%, 8% { transform: scale(.6, .7); opacity: 0; }
+  21%, 43% { transform: scale(1, 1); opacity: 1; }
+  70% { transform: scale(.95, 1.08); opacity: 1; }
+  85%, 87% { transform: scale(1, 1); opacity: 1; }
+  91% { transform: scale(1.45, .42); opacity: .72; border-radius: 58% 48% 15% 15%; }
+  96% { transform: scale(2.15, .09); opacity: .2; }
+  100% { transform: scale(2.4, .02); opacity: 0; }
+}
+@keyframes glass-wet-tail {
+  0%, 18% { transform: scaleY(.08); opacity: 0; }
+  40% { transform: scaleY(.2); opacity: .25; }
+  66%, 82% { transform: scaleY(1); opacity: .7; }
+  88% { transform: scaleY(.88); opacity: .3; }
+  96%, 100% { transform: scaleY(.78); opacity: 0; }
+}
+@keyframes glass-seam-absorb {
+  0%, 86% { transform: translateX(-50%) scale(.35, .1); opacity: 0; }
+  90% { transform: translateX(-50%) scale(.75, .8); opacity: calc(var(--drop-opacity) * .53); }
+  94% { transform: translateX(-50%) scale(1.25, .6); opacity: calc(var(--drop-opacity) * .45); }
+  100% { transform: translateX(-50%) scale(1.8, .06); opacity: 0; }
+}
+@keyframes glass-rain-reflection {
+  0%, 12% { transform: translateX(0) rotate(24deg); }
+  80%, 100% { transform: translateX(330%) rotate(24deg); }
+}
+
+.glass-rain[data-paused="true"] *,
+.glass-rain[data-paused="true"] *::before,
+.glass-rain[data-paused="true"] *::after,
+.glass-rain[data-paused="true"]::before { animation-play-state: paused !important; }
+.glass-rain[data-animated="false"] *,
+.glass-rain[data-animated="false"] *::before,
+.glass-rain[data-animated="false"] *::after,
+.glass-rain[data-animated="false"]::before,
+html[data-glass-motion="off"] .glass-rain *,
+html[data-glass-motion="off"] .glass-rain *::before,
+html[data-glass-motion="off"] .glass-rain *::after,
+html[data-glass-motion="off"] .glass-rain::before { animation: none !important; }
+.glass-rain[data-animated="false"] .rain-bead,
+html[data-glass-motion="off"] .glass-rain .rain-bead { opacity: var(--drop-opacity); }
+.glass-rain[data-animated="false"] .rain-runner,
+html[data-glass-motion="off"] .glass-rain .rain-runner { opacity: calc(var(--drop-opacity) * .7); transform: translateY(28%); }
+.glass-rain[data-animated="false"] .rain-runner::before,
+html[data-glass-motion="off"] .glass-rain .rain-runner::before { opacity: .35; }
+.glass-rain[data-animated="false"] .rain-edge-pool,
+html[data-glass-motion="off"] .glass-rain .rain-edge-pool { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .glass-rain *, .glass-rain *::before, .glass-rain *::after, .glass-rain::before { animation: none !important; }
+  .glass-rain .rain-bead { opacity: var(--drop-opacity); }
+  .glass-rain .rain-runner { opacity: calc(var(--drop-opacity) * .7); transform: translateY(28%); }
+  .glass-rain .rain-runner::before { opacity: .35; }
+  .glass-rain .rain-edge-pool { opacity: 0; }
+}
+@media (forced-colors: active) { .glass-rain { display: none; } }

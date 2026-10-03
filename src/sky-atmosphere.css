@@ -1,0 +1,233 @@
+/* A continuous sky behind every translucent surface, never above interactive content. */
+.sky-atmosphere {
+  --sky-top: rgb(211 230 225 / .29);
+  --sky-middle: rgb(245 231 184 / .19);
+  --sky-horizon: rgb(247 232 194 / .16);
+  --sky-bottom: rgb(209 224 211 / .12);
+  --sky-sun-inner: #FFF7DA;
+  --sky-sun-outer: #EBC87F;
+  --sky-halo-color: 238 197 115;
+  --sky-cloud-highlight: #FFFFFC;
+  --sky-cloud-color: #DFE5DE;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: auto;
+  height: auto;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+  border-radius: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.sky-atmosphere[data-phase="dawn"] {
+  --sky-top: rgb(221 195 217 / .35);
+  --sky-middle: rgb(245 213 192 / .26);
+  --sky-horizon: rgb(248 205 169 / .31);
+  --sky-bottom: rgb(231 213 212 / .13);
+  --sky-sun-inner: #FFF0CD;
+  --sky-sun-outer: #E9B37E;
+  --sky-halo-color: 236 177 127;
+}
+.sky-atmosphere[data-phase="noon"] {
+  --sky-top: rgb(196 224 233 / .30);
+  --sky-middle: rgb(239 234 202 / .17);
+  --sky-horizon: rgb(248 242 219 / .12);
+  --sky-bottom: rgb(208 230 217 / .12);
+  --sky-sun-inner: #FFFCED;
+  --sky-sun-outer: #ECD9A6;
+  --sky-halo-color: 239 215 153;
+}
+.sky-atmosphere[data-phase="afternoon"] {
+  --sky-top: rgb(229 222 205 / .26);
+  --sky-middle: rgb(244 220 174 / .24);
+  --sky-horizon: rgb(249 220 180 / .24);
+  --sky-sun-outer: #E9BD76;
+  --sky-halo-color: 236 184 104;
+}
+.sky-atmosphere[data-phase="sunset"] {
+  --sky-top: rgb(212 193 224 / .35);
+  --sky-middle: rgb(245 207 190 / .28);
+  --sky-horizon: rgb(240 191 159 / .34);
+  --sky-bottom: rgb(226 201 211 / .17);
+  --sky-sun-inner: #FFEAD0;
+  --sky-sun-outer: #E6A274;
+  --sky-halo-color: 236 158 110;
+}
+.sky-atmosphere[data-phase="twilight"] {
+  --sky-top: rgb(214 188 220 / .37);
+  --sky-middle: rgb(246 201 193 / .30);
+  --sky-horizon: rgb(246 184 144 / .35);
+  --sky-bottom: rgb(223 207 222 / .18);
+  --sky-cloud-highlight: #FFF2EB;
+  --sky-cloud-color: #E2CBCE;
+}
+.sky-atmosphere[data-phase="night"] {
+  --sky-top: rgb(190 198 220 / .27);
+  --sky-middle: rgb(218 210 229 / .19);
+  --sky-horizon: rgb(226 214 229 / .15);
+  --sky-cloud-highlight: #F4F2F7;
+  --sky-cloud-color: #CBD1DF;
+}
+.sky-atmosphere[data-condition="rain"], .sky-atmosphere[data-condition="storm"] {
+  --sky-top: rgb(180 201 211 / .30);
+  --sky-middle: rgb(210 222 221 / .24);
+  --sky-horizon: rgb(210 225 224 / .20);
+  --sky-bottom: rgb(191 213 216 / .15);
+  --sky-cloud-highlight: #EEF2F0;
+  --sky-cloud-color: #B8C8CF;
+}
+.sky-atmosphere[data-condition="fog"], .sky-atmosphere[data-condition="snow"] {
+  --sky-top: rgb(215 228 226 / .30);
+  --sky-middle: rgb(231 237 232 / .24);
+  --sky-cloud-highlight: #FFFDFC;
+  --sky-cloud-color: #DFE8E5;
+}
+/* Manual night mode is independent of the actual solar phase. */
+.sky-atmosphere[data-theme="night"] {
+  --sky-top: rgb(63 78 135 / .26);
+  --sky-middle: rgb(35 61 98 / .17);
+  --sky-horizon: rgb(91 70 137 / .18);
+  --sky-bottom: rgb(44 78 106 / .16);
+  --sky-cloud-highlight: #8FA8C9;
+  --sky-cloud-color: #4C6083;
+}
+.sky-atmosphere[data-theme="night"][data-condition="rain"],
+.sky-atmosphere[data-theme="night"][data-condition="storm"] {
+  --sky-top: rgb(76 93 119 / .22);
+  --sky-middle: rgb(42 66 91 / .17);
+  --sky-horizon: rgb(62 77 106 / .18);
+  --sky-cloud-highlight: #8298B0;
+  --sky-cloud-color: #41556F;
+}
+.sky-definitions { position: absolute; overflow: hidden; }
+.sky-wash, .sky-horizon, .sky-cloud-layer, .sky-snow, .sky-stars, .sky-hanging-stars { position: absolute; inset: 0; }
+.sky-wash {
+  opacity: calc(.72 + var(--sky-daylight, .65) * .28);
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-middle) 34%, transparent 66%, var(--sky-bottom));
+}
+.sky-horizon {
+  opacity: calc(.65 + var(--sky-warmth, .4) * .35);
+  background: radial-gradient(ellipse at 66% 40%, var(--sky-horizon), transparent 71%);
+}
+.sky-atmosphere[data-phase="twilight"] .sky-wash { opacity: .9; }
+.sky-atmosphere[data-theme="night"] .sky-wash { opacity: 1; }
+.sky-sun-position {
+  position: absolute;
+  left: clamp(52px, var(--sun-x, 52%), calc(100% - 52px));
+  top: var(--sun-y, 18%);
+  width: 0;
+  height: 0;
+  opacity: var(--sky-sun-opacity, .6);
+}
+.sky-sun {
+  position: absolute;
+  width: 82px;
+  height: 82px;
+  inset: -41px auto auto -41px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--sky-sun-inner), var(--sky-sun-outer) 86%);
+  border: 1px solid rgb(255 250 219 / .57);
+  box-shadow: inset 0 1px 2px #FFFFFF4D, 0 0 34px rgb(var(--sky-halo-color) / calc(.07 + var(--glass-glow, .55) * .16));
+}
+.sky-sun-halo {
+  position: absolute;
+  width: 370px;
+  height: 370px;
+  inset: -185px auto auto -185px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--sky-halo-color) / .31), rgb(var(--sky-halo-color) / .13) 31%, transparent 71%);
+  opacity: calc(.40 + var(--glass-glow, .55) * .6);
+}
+.sky-moon-position {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  left: 58%;
+  top: clamp(134px, 18vh, 174px);
+  transform: translate(-50%, -50%);
+  opacity: var(--sky-moon-opacity, .8);
+}
+.sky-atmosphere .sky-moon { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 9px rgb(180 212 255 / calc(.08 + var(--glass-glow, .55) * .22))); animation: sky-moon-drift 26s ease-in-out infinite; }
+.sky-moon-halo {
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  opacity: calc(.46 + var(--glass-glow, .55) * .54);
+  background: radial-gradient(circle, rgb(152 182 239 / .17), rgb(116 145 211 / .085) 34%, transparent 70%);
+}
+.sky-stars, .sky-hanging-stars { opacity: var(--sky-star-opacity, .6); }
+.sky-star {
+  position: absolute;
+  border-radius: 50%;
+  background: #D9EAF9;
+  box-shadow: 0 0 5px rgb(191 218 255 / calc(var(--glass-glow, .55) * .35));
+  animation: sky-star-twinkle 14s ease-in-out infinite;
+}
+.sky-star-point { border-radius: 0; clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%); background: #CEE0F8; }
+.sky-atmosphere .sky-hanging-star {
+  position: absolute;
+  top: 0;
+  width: var(--hanging-star-size, 14px);
+  height: calc(var(--thread-length, 150px) + var(--hanging-star-size, 14px));
+  transform-origin: 50% 0;
+  animation: sky-hanging-sway 20s ease-in-out infinite;
+}
+.sky-star-thread {
+  position: absolute;
+  width: .7px;
+  height: var(--thread-length, 150px);
+  top: 0;
+  left: 50%;
+  background: linear-gradient(to bottom, rgb(181 204 234 / .035), rgb(181 204 234 / .34));
+}
+.sky-hanging-star-shape {
+  position: absolute;
+  width: var(--hanging-star-size, 14px);
+  height: var(--hanging-star-size, 14px);
+  top: calc(var(--thread-length, 150px) - 1px);
+  left: .4px;
+  overflow: visible;
+  fill: rgb(211 229 248 / .31);
+  stroke: rgb(215 233 255 / .72);
+  stroke-width: .85;
+  filter: drop-shadow(0 0 5px rgb(187 215 255 / calc(var(--glass-glow, .55) * .35)));
+}
+.sky-cloud-layer { opacity: var(--sky-cloud-opacity, .22); }
+.sky-cloud {
+  position: absolute;
+  overflow: visible;
+  filter: blur(4px);
+  animation: sky-cloud-drift 47s ease-in-out infinite alternate;
+}
+.sky-cloud-one { width: clamp(330px, 42vw, 650px); height: auto; top: 9%; left: -8%; }
+.sky-cloud-two { width: clamp(350px, 45vw, 720px); height: auto; top: 29%; left: 60%; animation-duration: 61s; animation-delay: -23s; opacity: .8; }
+.sky-cloud-three { width: clamp(420px, 50vw, 800px); height: auto; top: 62%; left: 22%; animation-duration: 73s; animation-delay: -31s; opacity: .6; }
+.sky-atmosphere[data-condition="rain"] .sky-cloud, .sky-atmosphere[data-condition="storm"] .sky-cloud { filter: blur(6px); }
+.sky-haze { position: absolute; inset: 0; opacity: .27; }
+.sky-haze i { position: absolute; width: 120%; left: -10%; height: 9vh; border-radius: 50%; background: linear-gradient(90deg, transparent, var(--sky-cloud-color), var(--sky-cloud-highlight), transparent); filter: blur(19px); }
+.sky-haze i:nth-child(1) { top: 19%; }
+.sky-haze i:nth-child(2) { top: 51%; left: -22%; opacity: .55; }
+.sky-haze i:nth-child(3) { top: 76%; opacity: .65; }
+.sky-snowflake { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px #7D91852B; opacity: .5; animation: sky-snow-drift 23s ease-in-out infinite; }
+@keyframes sky-cloud-drift { from { transform: translateX(-25px) translateY(1px); } to { transform: translateX(25px) translateY(-5px); } }
+@keyframes sky-snow-drift { 0%, 100% { transform: translate(-5px, -6px); opacity: .12; } 50% { transform: translate(5px, 39px); opacity: .55; } }
+@keyframes sky-star-twinkle { 0%, 100% { opacity: .24; } 50% { opacity: .89; } }
+@keyframes sky-hanging-sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+@keyframes sky-moon-drift { 0%, 100% { transform: translateY(1px) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
+.sky-atmosphere[data-animated="false"] *,
+html[data-glass-motion="off"] .sky-atmosphere * { animation: none !important; }
+@media (max-width: 1020px) { .sky-moon-position { left: 64%; width: 220px; height: 220px; } }
+@media (max-width: 720px) {
+  .sky-moon-position { left: 57%; top: 148px; width: 192px; height: 192px; }
+  .sky-moon-halo { width: 350px; height: 350px; }
+  .sky-hanging-star:nth-child(1), .sky-hanging-star:nth-child(5) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .sky-atmosphere * { animation: none !important; } }
+@media (forced-colors: active) { .sky-atmosphere { display: none; } }

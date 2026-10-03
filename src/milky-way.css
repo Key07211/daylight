@@ -1,0 +1,63 @@
+.milky-way {
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+}
+
+.milky-way > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.milky-way .galactic-glow {
+  opacity: calc(.3 + var(--glass-glow, .65) * .7);
+}
+
+.milky-way .galaxy-drift {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: milky-way-drift 38s ease-in-out infinite;
+}
+
+.milky-way .galaxy-stars {
+  animation: milky-way-twinkle 14s ease-in-out infinite;
+}
+
+.milky-way .galaxy-stars-1 {
+  animation-duration: 19s;
+  animation-delay: -8s;
+}
+
+.milky-way .galaxy-stars-2 {
+  animation-duration: 17s;
+  animation-delay: -13s;
+}
+
+.milky-way .galaxy-beacons {
+  animation: milky-way-twinkle 12s ease-in-out -5s infinite;
+}
+
+@keyframes milky-way-drift {
+  0%, 100% { transform: translate(-1px, 1px) rotate(-.35deg); }
+  50% { transform: translate(1.5px, -2px) rotate(.5deg); }
+}
+
+@keyframes milky-way-twinkle {
+  0%, 100% { opacity: .66; }
+  50% { opacity: 1; }
+}
+
+.milky-way[data-animated="false"] *,
+html[data-glass-motion="off"] .milky-way * {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .milky-way * { animation: none !important; }
+}
+
+@media (forced-colors: active) {
+  .milky-way { display: none; }
+}

@@ -1,0 +1,72 @@
+.celestial-scene {
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+}
+.celestial-scene > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.celestial-halo {
+  opacity: calc(.20 + var(--glass-glow, .55) * .80);
+}
+.celestial-moon {
+  filter: drop-shadow(0 0 5px rgb(191 217 249 / calc(var(--glass-glow, .55) * .20)));
+}
+.celestial-stars {
+  opacity: calc(.38 + var(--glass-glow, .55) * .45);
+  animation: celestial-starlight 11s ease-in-out infinite;
+}
+.star-thread {
+  fill: none;
+  stroke: #B6CEE9;
+  stroke-width: .65;
+  stroke-opacity: .36;
+}
+.hanging-star-shape {
+  fill: #DCE9F5;
+  fill-opacity: .32;
+  stroke: #D9E9F8;
+  stroke-width: .65;
+  stroke-opacity: .7;
+  filter: drop-shadow(0 0 3px rgb(184 217 255 / calc(var(--glass-glow, .55) * .38)));
+}
+.hanging-star {
+  transform-box: view-box;
+  animation: celestial-star-sway 14s ease-in-out infinite;
+}
+.hanging-star-one { transform-origin: 59px 0; animation-delay: -3s; }
+.hanging-star-two { transform-origin: 187px 0; animation-duration: 16s; animation-delay: -9s; }
+.hanging-star-three { transform-origin: 166px 0; animation-duration: 12s; animation-delay: -5s; }
+@keyframes celestial-star-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.celestial-cloud {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.celestial-cloud-front { animation: celestial-cloud-front-drift 22s ease-in-out infinite; }
+.celestial-cloud-back { animation: celestial-cloud-back-drift 18s ease-in-out infinite; }
+@keyframes celestial-cloud-front-drift {
+  0%, 100% { transform: translate(-4px, 1px); }
+  50% { transform: translate(5px, -1px); }
+}
+@keyframes celestial-cloud-back-drift {
+  0%, 100% { transform: translate(3px, -1px); }
+  50% { transform: translate(-4px, 1px); }
+}
+@keyframes celestial-starlight {
+  0%, 100% { filter: opacity(.60); }
+  50% { filter: opacity(1); }
+}
+.celestial-scene[data-animated="false"] *,
+html[data-glass-motion="off"] .celestial-scene * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .celestial-scene * { animation: none !important; }
+}
+@media (forced-colors: active) {
+  .celestial-scene { display: none; }
+}

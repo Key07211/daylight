@@ -1,0 +1,107 @@
+/* A contact bends one side first; the head and flexible stalk settle afterward. */
+.sunflower-illustration { pointer-events: none; }
+.sunflower-rain-contacts { display: none; }
+.sunflower-stem-response { transform-box: view-box; transform-origin: 91px 229px; }
+.sunflower-head-response { transform-box: view-box; transform-origin: 0 22px; }
+.sunflower-petal-response { transform-box: view-box; transform-origin: 0 -23px; }
+.sunflower-impact-drop, .sunflower-impact-splash { opacity: 0; }
+
+html:not([data-theme="night"]) .sunflower-illustration[data-rain-reactive="true"] {
+  /* Remove the old regular wind loop during rain, retaining the placement angle. */
+  animation: none;
+}
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-rain-contacts { display: inline; }
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] :is(.sunflower-stem-response, .sunflower-stem, .sunflower-head-response, .sunflower-petal-right, .sunflower-petal-left, .sunflower-impact-drop, .sunflower-impact-splash) {
+  animation-duration: var(--sunflower-cycle);
+  animation-delay: var(--sunflower-phase);
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(.23,.58,.38,1);
+}
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-stem-response { animation-name: sunflower-stem-impact; }
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-stem { animation-name: sunflower-stem-flex; }
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-head-response { animation-name: sunflower-head-impact; }
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-petal-right { animation-name: sunflower-right-petal; }
+.sunflower-illustration[data-rain-reactive="true"][data-animated="true"] .sunflower-petal-left { animation-name: sunflower-left-petal; }
+.sunflower-rain-contact-right .sunflower-impact-drop { animation-name: sunflower-right-drop; }
+.sunflower-rain-contact-left .sunflower-impact-drop { animation-name: sunflower-left-drop; }
+.sunflower-rain-contact-right .sunflower-impact-splash { animation-name: sunflower-right-splash; }
+.sunflower-rain-contact-left .sunflower-impact-splash { animation-name: sunflower-left-splash; }
+
+@keyframes sunflower-stem-impact {
+  0%, 11%, 27%, 63%, 80%, 100% { transform: rotate(0); }
+  13% { transform: rotate(calc(.85deg * var(--sunflower-impact))); }
+  16% { transform: rotate(calc(-.36deg * var(--sunflower-impact))); }
+  20% { transform: rotate(calc(.14deg * var(--sunflower-impact))); }
+  65.5% { transform: rotate(calc(-.62deg * var(--sunflower-impact))); }
+  69% { transform: rotate(calc(.27deg * var(--sunflower-impact))); }
+  73% { transform: rotate(calc(-.1deg * var(--sunflower-impact))); }
+}
+@keyframes sunflower-stem-flex {
+  0%, 11%, 28%, 63%, 81%, 100% { d: path("M90 104C83 145 104 179 91 229"); }
+  14% { d: path("M90 104C87 145 107 179 91 229"); }
+  17.5% { d: path("M90 104C81.5 145 103 179 91 229"); }
+  22% { d: path("M90 104C83.6 145 104.4 179 91 229"); }
+  66.5% { d: path("M90 104C80 145 102 179 91 229"); }
+  70% { d: path("M90 104C84.3 145 105 179 91 229"); }
+  75% { d: path("M90 104C82.5 145 103.7 179 91 229"); }
+}
+@keyframes sunflower-head-impact {
+  0%, 11%, 24%, 63%, 77%, 100% { transform: translate(0) rotate(0); }
+  12.4% { transform: translate(.45px,.8px) rotate(calc(2.8deg * var(--sunflower-impact))); }
+  14.8% { transform: translate(-.15px,-.25px) rotate(calc(-1.2deg * var(--sunflower-impact))); }
+  17.3% { transform: translate(.1px,.1px) rotate(calc(.52deg * var(--sunflower-impact))); }
+  20% { transform: rotate(calc(-.17deg * var(--sunflower-impact))); }
+  64.7% { transform: translate(-.4px,.6px) rotate(calc(-2.25deg * var(--sunflower-impact))); }
+  67.3% { transform: translate(.2px,-.2px) rotate(calc(.96deg * var(--sunflower-impact))); }
+  70.2% { transform: rotate(calc(-.4deg * var(--sunflower-impact))); }
+  73.4% { transform: rotate(calc(.13deg * var(--sunflower-impact))); }
+}
+@keyframes sunflower-right-petal {
+  0%, 11%, 22%, 100% { transform: rotate(0) scaleY(1); }
+  11.8% { transform: rotate(calc(5.2deg * var(--sunflower-impact))) scaleY(.96); }
+  13.5% { transform: rotate(calc(-2.6deg * var(--sunflower-impact))) scaleY(1.008); }
+  15.8% { transform: rotate(calc(1.1deg * var(--sunflower-impact))) scaleY(.995); }
+  18.6% { transform: rotate(calc(-.35deg * var(--sunflower-impact))) scaleY(1); }
+}
+@keyframes sunflower-left-petal {
+  0%, 63%, 75%, 100% { transform: rotate(0) scaleY(1); }
+  63.8% { transform: rotate(calc(-4.6deg * var(--sunflower-impact))) scaleY(.965); }
+  65.7% { transform: rotate(calc(2.1deg * var(--sunflower-impact))) scaleY(1.006); }
+  68% { transform: rotate(calc(-.9deg * var(--sunflower-impact))) scaleY(.997); }
+  71% { transform: rotate(calc(.3deg * var(--sunflower-impact))) scaleY(1); }
+}
+@keyframes sunflower-right-drop {
+  0%, 6.9%, 11.1%, 100% { opacity: 0; }
+  7% { opacity: 0; transform: translate(7px,-32px); animation-timing-function: cubic-bezier(.45,0,.8,.55); }
+  8% { opacity: .82; }
+  11% { opacity: .82; transform: translate(0,0); }
+}
+@keyframes sunflower-left-drop {
+  0%, 58.9%, 63.1%, 100% { opacity: 0; }
+  59% { opacity: 0; transform: translate(6px,-30px); animation-timing-function: cubic-bezier(.45,0,.8,.55); }
+  60% { opacity: .74; }
+  63% { opacity: .74; transform: translate(0,0); }
+}
+@keyframes sunflower-right-splash {
+  0%, 10.9%, 14.8%, 100% { opacity: 0; }
+  11% { opacity: .84; transform: scale(.35); }
+  13.8% { opacity: 0; transform: scale(1.5) translateY(1px); }
+}
+@keyframes sunflower-left-splash {
+  0%, 62.9%, 66.8%, 100% { opacity: 0; }
+  63% { opacity: .75; transform: scale(.3); }
+  65.8% { opacity: 0; transform: scale(1.35) translateY(1.3px); }
+}
+
+.sunflower-illustration[data-paused="true"],
+.sunflower-illustration[data-paused="true"] * { animation-play-state: paused !important; }
+html[data-theme="night"] .sunflower-illustration *,
+html[data-glass-motion="off"] .sunflower-illustration *,
+.sunflower-illustration[data-animated="false"] * { animation: none !important; }
+html[data-theme="night"] .sunflower-rain-contacts,
+html[data-glass-motion="off"] .sunflower-rain-contacts,
+.sunflower-illustration[data-animated="false"] .sunflower-rain-contacts { display: none !important; }
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .sunflower-illustration, .sunflower-illustration * { animation: none !important; }
+  .sunflower-rain-contacts { display: none !important; }
+}

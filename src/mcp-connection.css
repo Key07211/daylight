@@ -1,0 +1,15 @@
+.mcp-connection { border: 1px solid var(--line); border-radius: 17px; padding: 18px; background: rgb(var(--material-rgb) / .25); }
+.mcp-connection-heading { display: flex; align-items: flex-start; gap: 12px; }
+.mcp-connection-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--green); flex-shrink: 0; }
+.mcp-connection-heading > div { flex: 1; min-width: 0; }
+.mcp-connection-heading > svg { flex-shrink: 0; color: var(--muted); margin-top: 4px; }
+.mcp-connection[data-state="ready"] .mcp-connection-heading > svg { color: var(--green); }
+.mcp-connection h3, .settings-body .mcp-connection h3 { margin: 0 0 6px; font-size: 15px; color: var(--text); }
+.mcp-connection p, .settings-body .mcp-connection p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--secondary); }
+.mcp-connection .mcp-session-note, .settings-body .mcp-connection .mcp-session-note { margin-top: 12px; color: var(--muted); }
+.mcp-connection-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 14px; }
+.mcp-connection-actions .secondary, .settings-body .mcp-connection-actions .secondary { margin: 0; height: 34px; font-size: 12px; }
+.mcp-auto-connect { display: inline-flex; align-items: center; gap: 7px; color: var(--secondary); font-size: 12px; cursor: pointer; }
+.mcp-auto-connect input { width: 15px; height: 15px; padding: 0; margin: 0; accent-color: var(--green); }
+.mcp-compact { margin-bottom: 26px; }
+.mcp-compact .mcp-connection-actions { margin-top: 12px; }

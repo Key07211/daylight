@@ -1,0 +1,73 @@
+.task-list .task-row {
+  transition: transform 180ms cubic-bezier(.2, .75, .25, 1),
+    background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.task-list .task-row:focus-within {
+  border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+  box-shadow: inset 0 1px 1px rgb(var(--material-edge, 220 234 229) / .45),
+    0 6px 22px rgb(var(--material-shadow, 27 43 40) / .095);
+}
+
+@media (hover: hover) {
+  .task-list .task-row:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 1px rgb(var(--material-edge, 220 234 229) / .5),
+      0 10px 27px rgb(var(--material-shadow, 27 43 40) / .12);
+  }
+}
+
+.task-list .task-checkbox {
+  transition: transform 140ms cubic-bezier(.2, .75, .25, 1);
+}
+
+.task-list .task-checkbox:active {
+  transform: scale(.91);
+}
+
+.task-list .task-checkbox::before {
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.task-list .task-row.completed .task-checkbox svg {
+  transform-origin: center;
+  animation: task-check-settle 230ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+@keyframes task-check-settle {
+  from { opacity: .3; transform: scale(.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.task-list[data-task-motion="off"] .task-row,
+.task-list[data-task-motion="off"] .task-checkbox,
+html[data-glass-motion="off"] .task-list .task-row,
+html[data-glass-motion="off"] .task-list .task-checkbox {
+  transform: none;
+  transition: none;
+}
+
+.task-list[data-task-motion="off"] .task-checkbox::before,
+html[data-glass-motion="off"] .task-list .task-checkbox::before {
+  transition: none;
+}
+
+.task-list[data-task-motion="off"] .task-checkbox svg,
+html[data-glass-motion="off"] .task-list .task-checkbox svg {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-list .task-row,
+  .task-list .task-checkbox {
+    transform: none !important;
+    transition: none !important;
+  }
+  .task-list .task-checkbox::before { transition: none !important; }
+  .task-list .task-checkbox svg { animation: none !important; }
+}
+
+@media (forced-colors: active) {
+  .task-list .task-row:hover,
+  .task-list .task-row:focus-within { box-shadow: none; }
+}

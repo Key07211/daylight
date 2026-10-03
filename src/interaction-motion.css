@@ -1,0 +1,230 @@
+/* A single rhythm for controls; task-row positioning stays with task-motion. */
+:root {
+  --interaction-quick: 150ms;
+  --interaction-settle: 220ms;
+  --interaction-exit: 160ms;
+  --interaction-ease: cubic-bezier(.2, .75, .25, 1);
+}
+.view-tabs .view-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.app-shell :is(
+  .primary, .secondary, .danger, .icon-button, .text-button, .text-danger,
+  .nav-item, .workspace, .theme-toggle, .add-project, .add-task-inline,
+  .window-pin, .weather-badge, .agenda-item, .notification, .run-row,
+  .automation-toggle, .automation-task-top > button, button.switch, .language-options button,
+  .weather-modes button, .weather-presets button, .weather-city-results button,
+  .reminder-shortcuts button, .color-picker button, .view-tabs button
+) {
+  transition:
+    transform var(--interaction-quick) var(--interaction-ease),
+    background-color var(--interaction-settle) ease,
+    color var(--interaction-quick) ease,
+    border-color var(--interaction-settle) ease,
+    box-shadow var(--interaction-settle) ease,
+    opacity var(--interaction-quick) ease;
+  transform-origin: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-shell :is(
+    .primary, .secondary, .danger, .icon-button, .text-button, .text-danger,
+    .workspace, .theme-toggle, .add-project, .add-task-inline,
+    .window-pin, .weather-badge, .automation-task-top > button:not(.switch), .language-options button,
+    .weather-modes button, .weather-presets button,
+    .reminder-shortcuts button, .color-picker button, .view-tabs button
+  ):not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translateY(-1px);
+  }
+
+  .app-shell :is(.nav-item, .agenda-item, .notification, .run-row,
+    .weather-city-results button):not(:disabled):hover {
+    transform: translateX(1px);
+  }
+
+  .app-shell :is(.notification, .run-row, .automation-toggle,
+    .weather-city-results button):not(:disabled):hover {
+    background-color: var(--hover);
+  }
+}
+
+.app-shell :is(
+  .primary, .secondary, .danger, .icon-button, .text-button, .text-danger,
+  .nav-item, .workspace, .theme-toggle, .add-project, .add-task-inline,
+  .window-pin, .weather-badge, .agenda-item, .notification, .run-row,
+  .automation-toggle, .automation-task-top > button, button.switch, .language-options button,
+  .weather-modes button, .weather-presets button, .weather-city-results button,
+  .reminder-shortcuts button, .color-picker button, .view-tabs button
+):not(:disabled):not([aria-disabled="true"]):active {
+  transform: translateY(1px) scale(.985);
+  transition-duration: 90ms;
+}
+
+.app-shell :is(button, a[href]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--green) 72%, transparent);
+  outline-offset: 3px;
+}
+
+/* Selection glows into place; it does not replay an animation on data refresh. */
+.sidebar .nav-item::after {
+  transition: opacity var(--interaction-settle) ease;
+}
+.sidebar .nav-item.active,
+html[data-theme="night"] .sidebar .nav-item.active {
+  box-shadow: inset 0 1px 1px rgb(var(--material-edge, 220 234 229) / .6),
+    inset 0 -1px 2px rgb(var(--material-shadow, 27 43 40) / .1),
+    0 4px 15px rgb(var(--material-shadow, 27 43 40) / .07),
+    0 0 16px color-mix(in srgb, var(--green) 10%, transparent);
+}
+.sidebar .nav-item.active::after {
+  opacity: calc(.4 + var(--glass-glow, .5) * .6);
+}
+.switch > span {
+  transition: transform var(--interaction-settle) var(--interaction-ease);
+}
+.automation-task {
+  transition: border-color var(--interaction-settle) ease,
+    box-shadow var(--interaction-settle) ease;
+}
+.automation-task:focus-within {
+  border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+  box-shadow: 0 5px 18px rgb(var(--material-shadow, 27 43 40) / .08);
+}
+
+/* Mount-only entrances. Rendering updates and theme changes retain the nodes. */
+.overlay {
+  animation: interaction-overlay-in var(--interaction-settle) ease both;
+}
+.overlay .modal {
+  transform-origin: 50% 44%;
+  animation: interaction-modal-in var(--interaction-settle) var(--interaction-ease) both;
+}
+.overlay[data-closing="true"] {
+  animation: interaction-overlay-out var(--interaction-exit) ease both;
+}
+.modal[data-closing="true"],
+.overlay[data-closing="true"] .modal {
+  pointer-events: none;
+  animation: interaction-modal-out var(--interaction-exit) cubic-bezier(.4, 0, 1, 1) both;
+}
+.weather-city-results {
+  transform-origin: top center;
+  animation: interaction-menu-in var(--interaction-settle) var(--interaction-ease) both;
+}
+.sidebar-scrim {
+  animation: interaction-overlay-in var(--interaction-settle) ease both;
+}
+.toast {
+  animation: interaction-toast-in var(--interaction-settle) var(--interaction-ease) both;
+}
+
+/* Kept mounted by React so both expansion and collapse have the same timing. */
+.motion-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--interaction-settle) var(--interaction-ease),
+    opacity var(--interaction-settle) ease;
+}
+.motion-disclosure[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.motion-disclosure:not([data-open="true"]) {
+  pointer-events: none;
+}
+.motion-disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@keyframes interaction-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes interaction-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes interaction-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes interaction-modal-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(6px) scale(.985); }
+}
+@keyframes interaction-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes interaction-toast-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Settle captures without changing animation names and replaying them later. */
+html[data-theme-transition="running"] .main-content {
+  opacity: 1 !important;
+  translate: none !important;
+}
+html[data-theme-transition="running"] :is(
+  .overlay, .modal, .weather-city-results, .sidebar-scrim, .toast
+) {
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+}
+html[data-theme-transition="running"] :is(.motion-disclosure, .switch > span),
+html[data-theme-transition="running"] .nav-item::after {
+  transition: none !important;
+}
+
+html[data-glass-motion="off"] .app-shell :is(button, a[href]),
+html[data-glass-motion="off"] :is(.motion-disclosure, .switch > span),
+html[data-glass-motion="off"] .nav-item::after {
+  transition: none !important;
+}
+html[data-glass-motion="off"] .app-shell :is(
+  .primary, .secondary, .danger, .icon-button, .text-button, .text-danger,
+  .nav-item, .workspace, .theme-toggle, .add-project, .add-task-inline,
+  .window-pin, .weather-badge, .agenda-item, .notification, .run-row,
+  .automation-toggle, .automation-task-top > button, button.switch, .language-options button,
+  .weather-modes button, .weather-presets button, .weather-city-results button,
+  .reminder-shortcuts button, .color-picker button, .view-tabs button
+) { transform: none !important; }
+html[data-glass-motion="off"] :is(
+  .overlay, .modal, .weather-city-results, .sidebar-scrim, .toast
+) { animation: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell :is(button, a[href]),
+  .motion-disclosure, .automation-task, .switch > span, .nav-item::after {
+    transition: none !important;
+  }
+  .app-shell :is(
+    .primary, .secondary, .danger, .icon-button, .text-button, .text-danger,
+    .nav-item, .workspace, .theme-toggle, .add-project, .add-task-inline,
+    .window-pin, .weather-badge, .agenda-item, .notification, .run-row,
+    .automation-toggle, .automation-task-top > button, button.switch, .language-options button,
+    .weather-modes button, .weather-presets button, .weather-city-results button,
+    .reminder-shortcuts button, .color-picker button, .view-tabs button
+  ) { transform: none !important; }
+  .overlay, .modal, .weather-city-results, .sidebar-scrim, .toast {
+    animation: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .app-shell :is(button, a[href]):focus-visible { outline-color: Highlight; }
+  .sidebar .nav-item.active,
+  html[data-theme="night"] .sidebar .nav-item.active { box-shadow: none; }
+}

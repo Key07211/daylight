@@ -1,0 +1,53 @@
+/* Keep the old image opaque under the new image: normal compositing avoids a washed-out midpoint. */
+::view-transition-group(root) { animation: none; }
+::view-transition-image-pair(root) { isolation: isolate; }
+::view-transition-old(root) {
+  animation: daylight-theme-hold 700ms linear both;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: daylight-theme-reveal 700ms cubic-bezier(.4, 0, .2, 1) both;
+  mix-blend-mode: normal;
+}
+::view-transition,
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) { pointer-events: none !important; }
+@keyframes daylight-theme-hold { from, to { opacity: 1; } }
+@keyframes daylight-theme-reveal { from { opacity: 0; } to { opacity: 1; } }
+
+/* Both captures must contain settled colors; decorative rain/cloud animations keep running. */
+html[data-theme-transition="running"] :is(
+  .app-shell, .sidebar, .sidebar-atmosphere, .brand-mark, .workspace,
+  .workspace-shell, .topbar, .main-content, .daily-sidebar, .task-row,
+  .list-toolbar, .progress-card, .progress-circle, .progress-circle > div,
+  .agenda-section, .language-card, .language-options, .theme-toggle,
+  .theme-option, .nav-item, .nav-count, .icon-button, .primary, .secondary,
+  .priority-label, .automation-task, .automation-banner, .run-list,
+  .glass-environment, .glass-stars, .sky-atmosphere, .modal, .modal-header,
+  .modal-footer, .toast, .field input, .field select, .field textarea, button
+),
+html[data-theme-transition="running"] .sidebar::before,
+html[data-theme-transition="running"] .sidebar::after,
+html[data-theme-transition="running"] .sidebar-atmosphere::before,
+html[data-theme-transition="running"] .sidebar-atmosphere::after {
+  transition: none !important;
+}
+
+/* The app's motion switch includes color changes as well as its ambient scene. */
+html[data-glass-motion="off"] :is(
+  .app-shell, .sidebar, .sidebar-atmosphere, .brand-mark, .workspace,
+  .workspace-shell, .topbar, .main-content, .daily-sidebar, .task-row,
+  .list-toolbar, .progress-card, .progress-circle, .progress-circle > div,
+  .agenda-section, .language-card, .language-options, .theme-toggle,
+  .theme-option, .nav-item, .nav-count, .icon-button, .primary, .secondary,
+  .priority-label, .automation-task, .automation-banner, .run-list,
+  .glass-environment, .glass-stars, .sky-atmosphere, .modal, .modal-header,
+  .modal-footer, .toast, .field input, .field select, .field textarea, button
+) { transition: none !important; }
+html[data-glass-motion="off"]::view-transition-old(root),
+html[data-glass-motion="off"]::view-transition-new(root) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}
