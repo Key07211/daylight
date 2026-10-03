@@ -4,7 +4,7 @@
 
 **Windows x64 · 0.3.0 · 中文 / English · 本地保存**
 
-[下载安装包](https://github.com/Key07211/daylight/releases/latest) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md) · [产品演示说明](docs/DEMO.md)
+[下载安装包](https://github.com/Key07211/daylight/releases/latest) · [在线产品演示](https://key07211.github.io/daylight/demo.html) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md)
 
 ![Daylight 日光模式，使用独立示例任务](docs/media/tasks-day.webp)
 
@@ -47,7 +47,7 @@ MCP 的任务修改直接生效，不经过清单界面的确认弹窗；调用�
 
 ## 产品演示
 
-下载或克隆本仓库，用浏览器打开 [`docs/demo.html`](docs/demo.html)。它可离线查看当前应用的真实示例截图、日夜与雨天开场，支持中英文切换；演示数据和正式任务隔离。操作路径与讲解见 [产品演示说明](docs/DEMO.md)。
+打开[在线产品演示](https://key07211.github.io/daylight/demo.html)，或从发布页下载 `Daylight-Demo-0.3.0.zip`，解压后用浏览器打开 `docs/demo.html`。也可直接使用本仓库的 [`docs/demo.html`](docs/demo.html)。它可离线查看当前应用的真实示例截图、日夜与雨天开场，支持中英文切换；演示数据和正式任务隔离。操作路径与讲解见 [产品演示说明](docs/DEMO.md)。
 
 原始 [Figma v1 设计稿](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) 保留了早期构思。后续视觉与天气动效以应用实装为准，见 [界面与动效说明](design/day-night-spec.md)。
 

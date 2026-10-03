@@ -1,6 +1,6 @@
 # Daylight 产品演示
 
-[打开交互导览](demo.html) · [使用指南](USER_GUIDE.md) · [Codex 接入](MCP_GUIDE.md)
+[在线产品演示](https://key07211.github.io/daylight/demo.html) · [打开离线导览](demo.html) · [使用指南](USER_GUIDE.md) · [Codex 接入](MCP_GUIDE.md)
 
 下载演示压缩包后解压，打开其中的 `docs/demo.html`。也可以下载本仓库的 `docs` 文件夹，保留 `media` 子目录，使用 Edge、Chrome 或 Firefox 打开 `demo.html`。页面和所有素材均在本地，无需启动 Daylight、安装依赖或连接网络。
 
