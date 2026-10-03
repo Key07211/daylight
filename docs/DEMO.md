@@ -4,6 +4,8 @@
 
 下载演示压缩包后解压，打开其中的 `docs/demo.html`。也可以下载本仓库的 `docs` 文件夹，保留 `media` 子目录，使用 Edge、Chrome 或 Firefox 打开 `demo.html`。页面和所有素材均在本地，无需启动 Daylight、安装依赖或连接网络。
 
+演示默认使用英文，包含英文界面、示例任务与开场动画；右上角可切换中文。也可直接打开[英文版](https://key07211.github.io/daylight/demo.html?lang=en)或[中文版](https://key07211.github.io/daylight/demo.html?lang=zh)。页面以画面为主，每章保留一句说明。
+
 这是一份产品导览，不是任务客户端。点击章节、切换画面、中英文切换、放大截图与播放开场，只影响演示页面。它不会添加任务、发送提醒、修改应用配置或调用 Codex。
 
 ## 演示内容
@@ -23,7 +25,7 @@
 
 所有应用截图均由当前应用代码在一个全新的隔离资料目录中拍摄。六条任务、项目名称、日期、天气和城市均为公开演示准备的固定样例，不含真实用户任务、邮箱、课程资料或个人配置路径。界面中的“演示城市”与温度是拍摄用的天气样例，不代表实时天气。
 
-任务编辑和完成确认对话框是真实界面。拍摄时取消了完成操作；示例任务未被标记为完成。英文截图通过应用自带的语言按钮切换，置顶状态通过真实窗口控制验证。
+任务编辑和完成确认对话框是真实界面。拍摄时取消了完成操作；示例任务未被标记为完成。两套截图分别使用中英文界面和对应语言的示例任务，置顶状态通过真实窗口控制验证。正式应用的语言切换不会翻译已有任务内容。
 
 Codex 截图刻意保留未连接状态。调度草稿保持暂停，工作目录未设置，执行历史为空。没有配置真实 MCP、发送 Codex 指令或伪造工具数量、执行结果。
 
@@ -56,6 +58,8 @@ Codex 截图刻意保留未连接状态。调度草稿保持暂停，工作目�
 
 动画素材只保留开场部分，不包含开场后的任务画面。使用 WebP 便于压缩包与 GitHub 页面直接离线播放，无需视频解码工具。
 
+上表的 14 份中文素材位于 `media/`，对应的 14 份英文素材位于 `media/en/`，文件名一致。切换语言时会同时切换演示文案和素材。
+
 ## 为维护者重新拍摄
 
 在仓库根目录运行：
@@ -64,6 +68,7 @@ Codex 截图刻意保留未连接状态。调度草稿保持暂停，工作目�
 npm install
 npm run build
 .\node_modules\.bin\electron.cmd desktop/product-demo.cjs
+.\node_modules\.bin\electron.cmd desktop/product-demo.cjs --english
 .\node_modules\.bin\electron.cmd desktop/product-demo.cjs --verify-docs
 ```
 
@@ -75,7 +80,7 @@ npm run build
 
 ## English
 
-Open [demo.html](demo.html) after extracting the demo archive. Keep the adjacent `media` folder. The walkthrough works offline and has a built-in English switch.
+Open `docs/demo.html` after extracting the demo archive. Keep its adjacent `media` folder. The walkthrough defaults to English, including app captures, sample tasks, and opening animations. Chinese is available in the language switch. You can also use the [English online tour](https://key07211.github.io/daylight/demo.html?lang=en).
 
 The page is a product demonstration, not a task client. Its controls select actual app captures and explanations. They do not edit tasks, send notifications, configure MCP or execute Codex.
 

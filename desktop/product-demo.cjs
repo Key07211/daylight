@@ -1,5 +1,5 @@
 // Developer-only public media capture. Never opens a user's Daylight profile.
-// Run after building: electron desktop/product-demo.cjs
+// Run after building: electron desktop/product-demo.cjs [--english]
 const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -10,13 +10,16 @@ const root = path.resolve(__dirname, '..');
 const runtime = path.join(root, '.runtime');
 fs.mkdirSync(runtime, { recursive: true });
 const profile = fs.mkdtempSync(path.join(runtime, 'product-demo-'));
-const media = path.join(root, 'docs', 'media');
+const english = process.argv.includes('--english');
+const captureLanguage = english ? 'en' : 'zh';
+const mediaRoot = path.join(root, 'docs', 'media');
+const media = english ? path.join(mediaRoot, 'en') : mediaRoot;
 fs.mkdirSync(media, { recursive: true });
 app.setName('Daylight Product Demo');
 app.setPath('userData', profile);
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 let service, window, origin, injection;
-const report = { isolated: true, externalRequests: 0, mcpConfigured: false, schedulerStarted: false, screenshots: [], checks: [] };
+const report = { language: captureLanguage, isolated: true, externalRequests: 0, mcpConfigured: false, schedulerStarted: false, screenshots: [], checks: [] };
 setTimeout(() => { console.error('Product capture exceeded its three-minute deadline.'); app.exit(1); }, 180000).unref();
 
 app.whenReady().then(async () => {
@@ -34,7 +37,7 @@ app.whenReady().then(async () => {
     assert.ok(response.ok, `${method} ${route}: ${response.status}`);
     return response.json();
   };
-  const project = await request('/projects', 'POST', { name: '灵感与创作', color: '#688c79' });
+  const project = await request('/projects', 'POST', { name: english ? 'Ideas & projects' : '灵感与创作', color: '#688c79' });
   const date = (day, hour) => `2026-10-${day}T${hour}:00:00-07:00`;
   const sampleTasks = [
     { title: '整理下一版产品的三个重点', priority: 'high', projectId: project.id, dueAt: date('07','15'), reminderAt: date('07','14'), notes: '梳理反馈、确认最重要的改进，再把下一步拆成可执行的小任务。' },
@@ -44,6 +47,20 @@ app.whenReady().then(async () => {
     { title: '整理本周进展', priority: 'low', dueAt: date('09','16'), notes: 'Codex 调度草稿；公共演示中保持暂停，不执行。', automation: { enabled: false, prompt: '阅读项目笔记，整理本周已完成事项与下一步建议。仅提供文字总结，不修改文件。', workspace: '', runAt: null, repeat: 'weekly', sandbox: 'read-only' } },
     { title: '完成工作区整理', priority: 'low', completed: true, notes: '归档已经完成的想法，为新一周留出空间。' },
   ];
+  if (english) {
+    const examples = [
+      ['Choose three priorities for the next release', 'Review feedback, choose the most useful improvements, and break the next steps into manageable tasks.'],
+      ["Prepare Friday's design share", 'Pick three inspiring designs and note one detail worth learning from each.'],
+      ['Take a sunset walk', 'Bring a camera and leave a little time to watch the light change.'],
+      ['Read a saved long-form article', 'Write down one idea to try in the next project.'],
+      ["Summarize this week's progress", 'Paused Codex scheduling draft. This public demo does not execute it.'],
+      ['Clear the workspace', 'Archive finished ideas and make room for the week ahead.'],
+    ];
+    sampleTasks.forEach((task, index) => {
+      [task.title, task.notes] = examples[index];
+      if (task.automation) task.automation.prompt = 'Read the project notes and summarize completed work and next steps. Provide a text summary only; do not modify files.';
+    });
+  }
   for (const task of sampleTasks) await request('/tasks', 'POST', task);
   const verify = event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || new URL(event.senderFrame.url).origin !== origin) throw new Error('Demo window required');
@@ -58,7 +75,7 @@ app.whenReady().then(async () => {
     if (/^https?:/.test(details.url) && new URL(details.url).origin !== origin) { report.externalRequests++; return callback({ cancel: true }); }
     callback({});
   });
-  ipcMain.handle('daylight:get-info', event => { verify(event); return { version: 'Product demo', dataPath: '隔离的示例数据', autoLaunch: false, alwaysOnTop: window.isAlwaysOnTop(), isPackaged: false }; });
+  ipcMain.handle('daylight:get-info', event => { verify(event); return { version: 'Product demo', dataPath: english ? 'Isolated sample data' : '隔离的示例数据', autoLaunch: false, alwaysOnTop: window.isAlwaysOnTop(), isPackaged: false }; });
   ipcMain.handle('daylight:claim-startup', event => { verify(event); return false; });
   ipcMain.handle('daylight:set-theme', (event, theme) => { verify(event); assert.ok(['day','night'].includes(theme)); nativeTheme.themeSource = theme === 'night' ? 'dark' : 'light'; return { theme }; });
   ipcMain.handle('daylight:set-always-on-top', (event, value) => { verify(event); assert.equal(typeof value, 'boolean'); window.setAlwaysOnTop(value); return { alwaysOnTop: value }; });
@@ -78,7 +95,7 @@ app.whenReady().then(async () => {
   await capture('task-editor');
   await dismiss();
   await click('.task-checkbox');
-  await until('!!document.querySelector(".confirm-task-title") || document.querySelector(".modal")?.textContent.includes("确认完成")');
+  await until('!!document.querySelector(".completion-confirm")');
   await capture('complete-confirm');
   await dismiss();
   assert.equal((await request('/tasks', 'GET')).filter(item => item.completed).length, 1);
@@ -96,7 +113,7 @@ app.whenReady().then(async () => {
   await until('document.querySelector(".window-pin")?.getAttribute("aria-pressed")==="true"');
   await capture('tasks-english');
   await click('.window-pin');
-  await click('[data-language="zh"]');
+  await click(`[data-language="${captureLanguage}"]`);
   await intro('opening-day');
   await scenario('night');
   await click('[data-view="all"]');
@@ -109,7 +126,7 @@ app.whenReady().then(async () => {
   assert.equal(report.externalRequests, 0);
   assert.equal(service.store.data.runs.length, 0);
   report.checks.push('Fresh isolated profile', 'Six synthetic tasks only', 'No external requests', 'No Codex registration or execution', 'Completion cancelled without a write', 'Native pin control verified', 'Actual application screenshots');
-  fs.writeFileSync(path.join(runtime, 'product-demo-report.json'), JSON.stringify(report, null, 2));
+  fs.writeFileSync(path.join(runtime, `product-demo-report${english ? '-en' : ''}.json`), JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ screenshots: report.screenshots.length, checks: report.checks, externalRequests: report.externalRequests }));
   await service.close(); window.destroy(); app.quit();
 }).catch(async error => { console.error(error.message); try { await service?.close(); } catch {} app.exit(1); });
@@ -123,6 +140,8 @@ async function capture(name) {
   await delay(600);
   await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
   const text = await evaluate('document.body.innerText');
+  // The language switch intentionally keeps the native-language label 中文.
+  if (english) assert.ok(!/\p{Script=Han}/u.test(text.replaceAll('中文', '')), `Unexpected Chinese content in English capture: ${name}`);
   const username = require('node:os').userInfo().username;
   assert.ok(!/[\w.+-]+@[\w.-]+\.[a-z]{2,}|AppData[\\/]|[\\/]Users[\\/]|[\\/]home[\\/]/i.test(text)
     && (!username || !text.toLowerCase().includes(username.toLowerCase())), `Private content in ${name}`);
@@ -134,7 +153,7 @@ async function scenario(mode) {
   console.log(`Loading ${mode}`);
   const night = mode === 'night', rain = mode === 'rain';
   const stamp = Date.parse(`2026-10-07T${night ? '21:30' : '09:30'}:00-07:00`);
-  const city = { name: '演示城市', region: '', country: '', latitude: 37.7749, longitude: -122.4194, timezone: 'America/Los_Angeles' };
+  const city = { name: english ? 'Demo City' : '演示城市', region: '', country: '', latitude: 37.7749, longitude: -122.4194, timezone: 'America/Los_Angeles' };
   const weather = { ...city, fetchedAt: new Date(stamp).toISOString(), observedAt: new Date(stamp).toISOString(), source: 'Open-Meteo', stale: false, temperature: rain ? 17 : 22,
     weatherCode: rain ? 63 : 0, cloudCover: rain ? 90 : 10, rain: rain ? 2 : 0, precipitation: rain ? 2 : 0, showers: 0, isDay: !night,
     days: [{ date: '2026-10-07', sunrise: '2026-10-07T07:10:00-07:00', sunset: '2026-10-07T18:45:00-07:00' }] };
@@ -142,7 +161,7 @@ async function scenario(mode) {
   ({ identifier: injection } = await window.webContents.debugger.sendCommand('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
     const NativeDate=Date; window.Date=class extends NativeDate {constructor(...args){super(...(args.length?args:[${stamp}]))}static now(){return ${stamp}}};
     Object.defineProperty(document,'hidden',{configurable:true,get:()=>false}); Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});
-    localStorage.setItem('daylight-language','zh'); localStorage.setItem('daylight-weather',JSON.stringify({mode:'live',locationMode:'manual',location:${JSON.stringify(city)}}));
+    localStorage.setItem('daylight-language',${JSON.stringify(captureLanguage)}); localStorage.setItem('daylight-weather',JSON.stringify({mode:'live',locationMode:'manual',location:${JSON.stringify(city)}}));
     for(const key of ['daylight-weather-cache','daylight-weather-location','daylight-theme-override'])localStorage.removeItem(key);
     sessionStorage.removeItem('daylight-theme-override');sessionStorage.removeItem('daylight-weather-preview-session');
     const original=fetch.bind(window);window.fetch=(input,options)=>{const url=new URL(typeof input==='string'?input:input.url,location.href);
@@ -160,6 +179,7 @@ async function scenario(mode) {
 async function intro(name) {
   await click('.sidebar-bottom button'); await click('[data-replay-startup]');
   await until('document.querySelector(".startup-scene")?.dataset.phase === "enter"');
+  if (english) assert.ok(!/\p{Script=Han}/u.test(await evaluate('document.querySelector(".startup-scene").innerText')), `Unexpected Chinese opening: ${name}`);
   const frames = [], delays = [], width = 960, height = 640, start = Date.now();
   for (let index = 0; index < 21; index++) {
     await delay(Math.max(0, start + index * 150 - Date.now()));
@@ -190,9 +210,14 @@ async function verifyDocs() {
   await window.loadFile(path.join(root, 'docs', 'demo.html'));
   await delay(400);
   await until('document.querySelector("#scene-image")?.complete && document.querySelector("#scene-image")?.naturalWidth > 0');
-  const assets = fs.readdirSync(media).filter(name => name.endsWith('.webp'));
-  assert.ok(assets.length >= 14, 'All screenshots, movies and posters must exist');
-  const imageResults = await evaluate(`Promise.all(${JSON.stringify(fs.readdirSync(media).filter(name => name.endsWith('.webp')))}.map(name=>new Promise(resolve=>{const image=new Image(); image.onload=()=>resolve({name,width:image.naturalWidth});image.onerror=()=>resolve({name,width:0});image.src='media/'+name})))`);
+  assert.equal(await evaluate('document.documentElement.lang'), 'en', 'English is the default tour');
+  assert.ok(await evaluate('document.querySelector("#scene-image").src.includes("/media/en/")'), 'Default image must use English assets');
+  const chineseAssets = fs.readdirSync(mediaRoot).filter(name => name.endsWith('.webp')).sort();
+  const englishAssets = fs.readdirSync(path.join(mediaRoot, 'en')).filter(name => name.endsWith('.webp')).sort();
+  assert.equal(chineseAssets.length, 14, 'All Chinese screenshots, movies and posters must exist');
+  assert.deepEqual(englishAssets, chineseAssets, 'The English capture set must match the Chinese set');
+  const assets = [...chineseAssets, ...englishAssets.map(name => `en/${name}`)];
+  const imageResults = await evaluate(`Promise.all(${JSON.stringify(assets)}.map(name=>new Promise(resolve=>{const image=new Image(); image.onload=()=>resolve({name,width:image.naturalWidth});image.onerror=()=>resolve({name,width:0});image.src='media/'+name})))`);
   for (const image of imageResults) assert.ok(image.width > 0, `Broken media: ${image.name}`);
   assert.equal(await evaluate('document.documentElement.scrollWidth > innerWidth'), false);
   await click('[data-chapter="tasks"]'); await click('[data-shot="complete-confirm"]');
@@ -204,13 +229,30 @@ async function verifyDocs() {
   await click('[data-chapter="opening"]'); await click('#play-opening');
   assert.equal(await evaluate('document.querySelector("#play-opening").getAttribute("aria-pressed")'), 'true');
   await click('#play-opening');
-  await click('[data-lang="zh"]');
   await click('[data-chapter="tasks"]');
+  await until('document.querySelector("#scene-image").complete && document.querySelector("#scene-image").naturalWidth > 0');
   fs.writeFileSync(path.join(runtime, 'product-demo-page-desktop.png'), (await window.webContents.capturePage()).toPNG());
   window.setContentSize(390, 844); await delay(400);
   assert.equal(await evaluate('document.documentElement.scrollWidth > innerWidth'), false);
   fs.writeFileSync(path.join(runtime, 'product-demo-page-mobile.png'), (await window.webContents.capturePage()).toPNG());
+  await click('[data-lang="zh"]');
+  assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
+  assert.equal(await evaluate('document.querySelector("#scene-image").src.includes("/media/en/")'), false);
+  assert.equal(await evaluate('document.documentElement.scrollWidth > innerWidth'), false);
+  fs.writeFileSync(path.join(runtime, 'product-demo-page-mobile-zh.png'), (await window.webContents.capturePage()).toPNG());
+  window.setContentSize(1440, 1000); await delay(400);
+  for (const language of ['zh', 'en']) {
+    await window.loadURL(`${pathToFileURL(path.join(root, 'docs', 'demo.html')).href}?lang=${language}`);
+    await until('document.querySelector("#scene-image").complete && document.querySelector("#scene-image").naturalWidth > 0');
+    assert.equal(await evaluate('document.documentElement.lang'), language === 'zh' ? 'zh-CN' : 'en');
+    for (const chapter of ['tasks', 'atmosphere', 'desktop', 'codex', 'opening', 'local']) {
+      await click(`[data-chapter="${chapter}"]`);
+      await until('document.querySelector("#scene-image").complete && document.querySelector("#scene-image").naturalWidth > 0');
+      assert.equal(await evaluate('document.querySelector("#scene-image").src.includes("/media/en/")'), language === 'en');
+      assert.equal(await evaluate('document.documentElement.scrollWidth > innerWidth'), false);
+    }
+  }
   assert.equal(network.length, 0); assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ offline: true, desktop: true, mobile: true, languageSwitch: true, chapters: true, gallery: true, openingPlayback: true, errors }));
+  console.log(JSON.stringify({ offline: true, desktop: true, mobile: true, defaultEnglish: true, queryLanguages: true, languageSwitch: true, assets: assets.length, chapters: true, gallery: true, openingPlayback: true, errors }));
   window.destroy(); app.quit();
 }

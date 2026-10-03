@@ -47,7 +47,7 @@ MCP 的任务修改直接生效，不经过清单界面的确认弹窗；调用�
 
 ## 产品演示
 
-打开[在线产品演示](https://key07211.github.io/daylight/demo.html)，或从发布页下载 `Daylight-Demo-0.3.0.zip`，解压后用浏览器打开 `docs/demo.html`。也可直接使用本仓库的 [`docs/demo.html`](docs/demo.html)。它可离线查看当前应用的真实示例截图、日夜与雨天开场，支持中英文切换；演示数据和正式任务隔离。操作路径与讲解见 [产品演示说明](docs/DEMO.md)。
+打开[在线产品演示](https://key07211.github.io/daylight/demo.html)，或从发布页下载 `Daylight-Demo-0.3.0.zip`，解压后用浏览器打开 `docs/demo.html`。也可直接使用本仓库的 [`docs/demo.html`](docs/demo.html)。它可离线查看当前应用的真实示例截图、日夜与雨天开场，默认英文，并支持中文切换；演示截图和示例任务随语言切换。演示数据与正式任务隔离。操作路径与讲解见 [产品演示说明](docs/DEMO.md)。
 
 原始 [Figma v1 设计稿](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) 保留了早期构思。后续视觉与天气动效以应用实装为准，见 [界面与动效说明](design/day-night-spec.md)。
 
