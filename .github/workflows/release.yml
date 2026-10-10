@@ -74,6 +74,54 @@ jobs:
         run: |
           npm run package:win -- --publish never
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
+      - name: Enable animations for the full motion UI suite
+        if: runner.environment == 'github-hosted' && runner.os == 'Windows'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The full-motion suite requires animations; hosted Windows may default
+          # to reduced motion. This changes only this disposable runner session.
+          Add-Type -TypeDefinition @'
+          using System;
+          using System.Runtime.InteropServices;
+          public static class DaylightCiAnimationSettings {
+            [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool Read(uint action, uint parameter, out int value, uint flags);
+            [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool Write(uint action, uint parameter, IntPtr value, uint flags);
+          }
+          '@
+          $before = 0
+          if (-not [DaylightCiAnimationSettings]::Read(0x1042, 0, [ref]$before, 0)) { throw "Could not read client-area animations: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())" }
+          Write-Output "Client-area animations before: $([bool]$before)"
+          # SPI_SETCLIENTAREAANIMATION; SPIF_SENDCHANGE only, without writing the user INI.
+          if (-not [DaylightCiAnimationSettings]::Write(0x1043, 0, [IntPtr]::new(1), 2)) { throw "Could not enable client-area animations: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())" }
+          $after = 0
+          if (-not [DaylightCiAnimationSettings]::Read(0x1042, 0, [ref]$after, 0)) { throw 'Could not verify client-area animations' }
+          Write-Output "Client-area animations after: $([bool]$after)"
+          if ($after -eq 0) { throw 'Full-motion UI checks require client-area animations' }
+          New-Item -ItemType Directory -Path .runtime -Force | Out-Null
+          @'
+          const { app, systemPreferences } = require('electron');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const profile = fs.mkdtempSync(path.resolve('.runtime/ci-animation-profile-'));
+          app.setPath('userData', profile);
+          app.disableHardwareAcceleration();
+          const timer = setTimeout(() => app.exit(1), 15000);
+          app.whenReady().then(() => {
+            const settings = systemPreferences.getAnimationSettings();
+            console.log(JSON.stringify({ isolatedAnimationCheck: true, ...settings }));
+            clearTimeout(timer);
+            app.exit(settings.prefersReducedMotion === false ? 0 : 1);
+          }).catch(error => {
+            console.error(error.message);
+            app.exit(1);
+          });
+          '@ | Set-Content -LiteralPath .runtime/ci-animation-check.cjs -Encoding utf8
+          & .\node_modules\.bin\electron.cmd .runtime/ci-animation-check.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Electron still reports reduced motion; full-motion UI checks cannot run' }
       - name: Verify packaged app and installer
         run: |
           node desktop/smoke-packaged.mjs
