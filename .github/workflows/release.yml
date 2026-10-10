@@ -261,10 +261,15 @@ jobs:
           $assetPaths = @($assetNames | ForEach-Object { Join-Path 'release' $_ })
           gh release upload $tag @assetPaths --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Asset upload failed; release remains a draft' }
-          $uploadedJson = gh api "repos/$env:GH_REPO/releases/tags/$tag"
+          # The by-tag REST endpoint only returns published releases. Resolve
+          # the draft's numeric ID through the CLI before verifying its assets.
+          $draftId = gh release view $tag --json databaseId --jq .databaseId
+          if ($LASTEXITCODE -ne 0 -or $draftId -notmatch '\A[1-9]\d*\z') { throw 'Could not resolve release draft ID' }
+          $uploadedJson = gh api "repos/$env:GH_REPO/releases/$draftId"
           if ($LASTEXITCODE -ne 0) { throw 'Could not verify uploaded assets; release remains a draft' }
           $uploaded = $uploadedJson | ConvertFrom-Json
           if (-not $uploaded.draft) { throw 'Expected an unpublished draft' }
+          if ($uploaded.tag_name -cne $tag) { throw 'Uploaded assets belong to a different release tag' }
           if (@($uploaded.assets).Count -ne $assetNames.Count) { throw 'Unexpected release asset count' }
           foreach ($name in $assetNames) {
             $matches = @($uploaded.assets | Where-Object name -CEQ $name)
