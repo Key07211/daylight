@@ -86,6 +86,37 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Update metadata verification failed' }
           & .\node_modules\.bin\electron.cmd desktop/update-download-smoke.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Isolated updater download verification failed' }
+      - name: Print isolated smoke failure reports
+        if: failure()
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $runtimePath = Join-Path $env:GITHUB_WORKSPACE '.runtime'
+          $reports = @(
+            (Join-Path $runtimePath 'desktop-smoke-packaged.json'),
+            (Join-Path $runtimePath 'portable-smoke.json')
+          )
+          if (Test-Path -LiteralPath $runtimePath -PathType Container) {
+            foreach ($pattern in @('packaged-smoke-*', 'portable-smoke-*')) {
+              foreach ($directory in @(Get-ChildItem -LiteralPath $runtimePath -Directory -Filter $pattern)) {
+                if (-not ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                  $reports += Join-Path $directory.FullName 'desktop-smoke.json'
+                }
+              }
+            }
+          }
+          foreach ($reportPath in $reports) {
+            if (Test-Path -LiteralPath $reportPath -PathType Leaf) {
+              $reportFile = Get-Item -LiteralPath $reportPath
+              if ($reportFile.Attributes -band [System.IO.FileAttributes]::ReparsePoint) { continue }
+              Write-Output "Smoke report: $($reportFile.FullName)"
+              if ($reportFile.Length -le 1048576) {
+                Get-Content -LiteralPath $reportPath -Raw
+              } else {
+                Write-Output 'Report exceeded 1 MiB; printing the final 200 lines.'
+                Get-Content -LiteralPath $reportPath -Tail 200
+              }
+            }
+          }
       - name: Prepare download bundles and validation records
         run: |
           $ErrorActionPreference = 'Stop'
