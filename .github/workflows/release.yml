@@ -74,6 +74,17 @@ jobs:
         run: |
           npm run package:win -- --publish never
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
+      - name: Set the time zone used by scheduled-theme fixtures
+        if: runner.environment == 'github-hosted' && runner.os == 'Windows'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Packaged UI fixtures use Pacific timestamps across winter and summer.
+          # Change only this disposable runner, never the app's time-zone behavior.
+          Write-Output "Time zone before: $((Get-TimeZone).Id)"
+          Set-TimeZone -Id 'Pacific Standard Time'
+          $zone = (Get-TimeZone).Id
+          Write-Output "Time zone after: $zone"
+          if ($zone -cne 'Pacific Standard Time') { throw 'Scheduled-theme UI checks require the Pacific fixture time zone' }
       - name: Enable animations for the full motion UI suite
         if: runner.environment == 'github-hosted' && runner.os == 'Windows'
         run: |
