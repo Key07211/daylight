@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useAppUpdate, UpdateIndicator, UpdateSettings } from './UpdateControl.jsx';
 import { createRoot } from "react-dom/client";
 import {
   Sun,
@@ -254,6 +255,7 @@ function App() {
   const { settings: glassSettings, setSettings: setGlassSettings, resetSettings: resetGlassSettings } = useGlassPreferences();
   const climate = useWeather();
   const mcpConnection = useMcpConnection();
+  const updates = useAppUpdate();
   const panelRef = useRef(null);
   const rainIntensity = climate.atmosphere.rainIntensity;
   const { theme: scheduledTheme, setTheme } = useScheduledTheme({ timezone: climate.atmosphere.timezone });
@@ -287,6 +289,11 @@ function App() {
     completionPending = useRef(false),
     requestSequence = useRef(0);
   const isNight = theme === "night";
+  useLayoutEffect(() => {
+    const editing = !data || !!editor || modal?.type === 'project' || busy || completionBusy;
+    document.documentElement.dataset.updateBusy = String(editing);
+    window.daylightDesktop?.setUpdateEditing?.(editing).catch(() => {});
+  }, [data, editor, modal, busy, completionBusy]);
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme === "night" ? "dark" : "light";
@@ -823,6 +830,7 @@ function App() {
                 <span>{desktop.alwaysOnTop ? t("已置顶") : t("置顶")}</span>
               </button>
             )}
+            <UpdateIndicator update={updates} />
             <IconButton
               label={t(`通知${unread ? `，${unread} 条未读` : ""}`, `Notifications${unread ? `, ${unread} unread` : ""}`)}
               onClick={() => setModal({ type: "notifications" })}
@@ -1362,6 +1370,7 @@ function App() {
               <p>{t('按电脑时间切换；手动选择保留至下次定时切换或退出应用。', 'Uses your computer’s time; manual choices last until the next scheduled switch or app exit.')}</p>
             </section>
             <LanguageSwitch />
+            <UpdateSettings update={updates} />
             {desktop && (
               <section>
                 <h3>

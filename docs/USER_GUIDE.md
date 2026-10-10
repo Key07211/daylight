@@ -1,6 +1,6 @@
 # Daylight 使用手册
 
-Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒，也可以让 Codex 管理清单，或让 Daylight 按时运行 Codex 指令。普通清单功能无需注册 Daylight 账号。本手册适用于 0.3.0。
+Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒，也可以让 Codex 管理清单，或让 Daylight 按时运行 Codex 指令。普通清单功能无需注册 Daylight 账号。本手册适用于 0.4.0。
 
 下载入口和当前版本见[项目首页](../README.md)。Codex 的连接、工具和调度配置见 [MCP 与 Codex 指南](MCP_GUIDE.md)。本手册中的任务名称均为示例。
 
@@ -22,14 +22,18 @@ Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒�
 
 | 版本 | 如何打开 | 适合的用法 |
 | --- | --- | --- |
-| 安装版 | 运行 `Daylight-Setup-0.3.0.exe`，按向导安装，再从桌面或开始菜单打开 | 日常使用、Codex MCP 自动连接、登录 Windows 后启动 |
-| 免安装版 | 将 `Daylight-Portable-0.3.0.zip` 完整解压，运行其中的同名 `.exe` | 先体验应用，或不希望安装程序 |
+| 安装版 | 运行 `Daylight-Setup-0.4.0.exe`，按向导安装，再从桌面或开始菜单打开 | 日常使用、Codex MCP 自动连接、登录 Windows 后启动 |
+| 免安装版 | 将 `Daylight-Portable-0.4.0.zip` 完整解压，运行其中的同名 `.exe` | 先体验应用，或不希望安装程序 |
 
-安装版默认安装到当前 Windows 用户，无需管理员权限。更新前，请在系统托盘中退出旧版 Daylight，避免文件被占用。正常更新不会清空任务。
+安装版默认安装到当前 Windows 用户，无需管理员权限。手动运行安装包更新前，请在系统托盘中退出旧版 Daylight，避免文件被占用。正常更新不会清空任务。
 
 免安装程序首次打开时需要短暂解包。它的任务仍保存在本机 `%APPDATA%\Daylight`，与安装版共用数据，**不会随 ZIP 一起携带**。一次只运行其中一个版本。免安装版不提供 MCP 自动登记和 Windows 登录启动；已有可用的 MCP 连接仍能访问它运行的本地服务。
 
-下载页会提供校验文件。可在下载目录打开 PowerShell，用 `Get-FileHash .\Daylight-Setup-0.3.0.exe -Algorithm SHA256` 计算摘要，与发布的校验值对照；免安装版请替换为对应 ZIP 文件名。是否已签名以对应发行说明为准。
+下载页会提供校验文件。可在下载目录打开 PowerShell，用 `Get-FileHash .\Daylight-Setup-0.4.0.exe -Algorithm SHA256` 计算摘要，与发布的校验值对照；免安装版请替换为对应 ZIP 文件名。是否已签名以对应发行说明为准。
+
+### 更新应用
+
+安装版启动后及运行期间每六小时自动检查更新。发现新版本时，置顶右侧出现蓝色圆点；点击「下载并立即重启」后下载，校验完成立即安装重启，没有倒计时。正在编辑或执行中的 Codex 任务会先等待完成。设置中也能「检查更新」。0.4.0 以前的版本需要先手动安装一次；免安装版手动下载更新。详见[中文更新指南](UPDATES.zh-CN.md) · [English update guide](UPDATES.md)。
 
 ## 认识主界面
 

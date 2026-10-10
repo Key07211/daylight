@@ -4,7 +4,7 @@
 
 一份随时间与天气变化的 Windows 桌面清单。用液态玻璃、向日葵、月光与雨窗陪伴日常工作，也能让本机 Codex 管理任务。
 
-**Windows x64 · v0.3.0 · 中文 / English · 本地保存**
+**Windows x64 · v0.4.0 · 中文 / English · 本地保存**
 
 [下载](https://github.com/Key07211/daylight/releases/latest) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md)
 
@@ -12,13 +12,13 @@
 
 ## 开始使用
 
-在 [Releases](https://github.com/Key07211/daylight/releases/latest) 下载 `Daylight-Setup-0.3.0.exe`，退出旧版后按向导安装。从桌面或开始菜单打开 Daylight，无需另外安装 Node.js。安装版支持 Codex MCP 自动连接，也可设为登录 Windows 时启动。
+在 [Releases](https://github.com/Key07211/daylight/releases/latest) 下载最新的 `Daylight-Setup-<version>.exe`，退出旧版后按向导安装。从桌面或开始菜单打开 Daylight，无需另外安装 Node.js。安装版支持 Codex MCP 自动连接，也可设为登录 Windows 时启动。
 
-免安装版下载 `Daylight-Portable-0.3.0.zip`，解压后运行其中的程序。它不登记 MCP，也不注册登录启动。两个版本共用本机 `%APPDATA%\Daylight`，一次只运行一个版本；免安装版的数据不会保存在程序旁边。
+免安装版下载 `Daylight-Portable-<version>.zip`，解压后运行其中的程序。它不登记 MCP，也不注册登录启动。两个版本共用本机 `%APPDATA%\Daylight`，一次只运行一个版本；免安装版的数据不会保存在程序旁边。
 
 发行程序**尚未签名**，Windows 可能显示未知发布者。发布页附有 SHA-256 校验值及验证摘要。
 
-项目筛选已加入当前源码与演示；Windows 下载包仍为已发布的 v0.3.0 构建。
+从 v0.4.0 起，安装版启动后及运行期间每六小时自动检查更新。置顶右侧的蓝色圆点可打开可用更新；点击**下载并立即重启**后才下载，校验完成即安装并重启，没有倒计时。正在编辑的任务或执行中的 Codex 任务会先等待完成。旧版需要先手动安装一次才能启用此功能，免安装版仍手动更新。详见[更新指南](docs/UPDATES.zh-CN.md)。
 
 ## 主要功能
 
@@ -30,6 +30,7 @@
 | 天气与开场 | 按城市天气呈现云雨雪；太阳沿轨迹移至当前时间，夜间月亮渐亮、悬星落下 |
 | 液态玻璃 | 可调通透度、模糊、高光；雨珠滑落并汇入玻璃底边，向日葵随雨轻颤 |
 | 桌面控制 | 窗口置顶、托盘、中英文切换、减少动态、JSON 导出 |
+| 版本更新 | 自动检查版本、置顶右侧蓝色圆点、下载进度，主动下载完成后自动安装并重启 |
 | Codex MCP | Codex 查询和管理清单、通知与执行结果，共 14 个工具 |
 | Codex 调度 | 为任务配置提示词、目录、时间和重复规则，调用本机 `codex exec` |
 
@@ -53,7 +54,7 @@ MCP 的任务修改直接生效，不经过应用界面的确认弹窗；调用�
 
 打开[中文动态演示](https://key07211.github.io/daylight/demo.html?lang=zh)或[英文动态演示](https://key07211.github.io/daylight/demo.html?lang=en)。日光、夜晚、雨天和开场画面自动播放，并提供暂停按钮。系统开启“减少动态效果”时，默认显示静止预览，也可主动播放。语言按钮会同时切换页面文案与示例界面截图。演示使用独立的示例任务，不会修改真实清单或执行 Codex。
 
-离线查看时，从 Releases 下载 `Daylight-Demo-0.3.0.zip`，解压后用浏览器打开 `docs/demo.html`，并保留随附文件的目录结构。本仓库也包含[演示页面](docs/demo.html)与[演示说明](docs/DEMO.zh-CN.md)。
+离线查看时，从 Releases 下载 `Daylight-Demo-<version>.zip`，解压后用浏览器打开 `docs/demo.html`，并保留随附文件的目录结构。本仓库也包含[演示页面](docs/demo.html)与[演示说明](docs/DEMO.zh-CN.md)。
 
 原始 [Figma v1 设计稿](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) 保留了早期构思。当前视觉与天气动效以应用实装为准，见[设计说明](design/day-night-spec.md)。
 
@@ -61,7 +62,7 @@ MCP 的任务修改直接生效，不经过应用界面的确认弹窗；调用�
 
 安装版和免安装版任务均位于 `%APPDATA%\Daylight\data\store.json`，可从设置打开数据目录。更新和卸载默认保留任务。使用导出功能可保存 JSON 备份；当前没有界面导入按钮，恢复步骤见[使用手册](docs/USER_GUIDE.md)。
 
-源码服务默认使用项目内的 `data/`。真实任务、日志、Codex 配置、安装包和本机运行记录都不进入 Git 仓库。天气查询需要联网，传给 Codex 的内容仍会由 Codex 联网处理。
+源码服务默认使用项目内的 `data/`。真实任务、日志、Codex 配置、安装包和本机运行记录都不进入 Git 仓库。天气查询与 GitHub 更新检查需要联网；更新检查不会发送任务清单。传给 Codex 的内容仍会由 Codex 联网处理。
 
 ## 从源码运行
 
@@ -86,9 +87,11 @@ node desktop/smoke-packaged.mjs
 node desktop/smoke-portable.mjs
 node desktop/verify-installer.mjs
 node desktop/smoke-mcp-migration.mjs
+node scripts/verify-update-release.mjs
+.\node_modules\.bin\electron.cmd desktop/update-download-smoke.cjs
 ```
 
-构建生成 NSIS 安装器与免安装程序。检查使用独立数据和端口，验证任务操作、原生接口、真实 MCP stdio 握手以及免安装启动。迁移检查需要本机 Codex CLI，使用独立的 `CODEX_HOME`；安装器检查提取载荷并比较哈希，不代替实际安装体验测试。发布包的 `VALIDATION-0.3.0.json` 记录该版本的验证结果。
+构建生成 NSIS 安装器、免安装程序及更新清单。检查使用独立数据和端口，验证任务操作、原生接口、真实 MCP stdio 握手以及免安装启动。迁移检查需要本机 Codex CLI，使用独立的 `CODEX_HOME`；安装器检查提取载荷并比较哈希，不代替实际安装体验测试。发布包的 `VALIDATION-<version>.json` 记录该版本的检查结果。推送匹配版本的标签会运行 [Windows 发布流程](.github/workflows/release.yml)，详见[发布新版本](docs/UPDATES.zh-CN.md#发布新版本)。
 
 系统时间与开场回归：
 

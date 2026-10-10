@@ -4,6 +4,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { resolveCodex } = require('./codex-path.cjs');
 const { createDesktopMcp } = require('./mcp-controller.cjs');
+const { createDesktopUpdates } = require('./update-service.cjs');
 
 app.setName('Daylight');
 app.setAppUserModelId('com.daylight.tasks');
@@ -29,6 +30,7 @@ let tray;
 let origin;
 let codexCommand;
 let mcp;
+let updates;
 let quitting = false;
 let shutdownStarted = false;
 let startupClaimed = false;
@@ -134,14 +136,27 @@ function setupIpc() {
   });
   ipcMain.handle('daylight:install-mcp', async event => {
     verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
     if (process.env.PORTABLE_EXECUTABLE_DIR) throw new Error('请先安装 Daylight，再添加稳定的 Codex MCP 连接。');
     return mcp.connect();
   });
   ipcMain.handle('daylight:mcp-status', event => { verifiedSender(event); return mcp.getStatus(); });
-  ipcMain.handle('daylight:check-mcp', event => { verifiedSender(event); return mcp.check(); });
+  ipcMain.handle('daylight:check-mcp', event => {
+    verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
+    return mcp.check();
+  });
   ipcMain.handle('daylight:set-mcp-auto-connect', (event, enabled) => {
     verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
     return mcp.setAutoConnect(enabled);
+  });
+  ipcMain.handle('daylight:update-status', event => { verifiedSender(event); return updates.getStatus(); });
+  ipcMain.handle('daylight:check-updates', event => { verifiedSender(event); return updates.check(); });
+  ipcMain.handle('daylight:download-update', event => { verifiedSender(event); return updates.download(); });
+  ipcMain.handle('daylight:update-editing', (event, value) => {
+    verifiedSender(event);
+    updates.setEditing(value);
   });
 }
 
@@ -170,6 +185,8 @@ async function createWindow() {
     },
   });
   window.removeMenu();
+  window.webContents.on('did-start-loading', () => updates.rendererLoading());
+  window.webContents.on('render-process-gone', () => updates.rendererLoading());
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (allowedExternal(url)) shell.openExternal(url).catch(console.error);
     return { action: 'deny' };
@@ -233,17 +250,27 @@ async function runSmoke() {
   const unpinned = await window.webContents.executeJavaScript('window.daylightDesktop.setAlwaysOnTop(false)');
   const pinDisabled = unpinned.alwaysOnTop === false && !window.isAlwaysOnTop() && !savedAlwaysOnTop();
   const pinning = { initialPinStateMatches, invalidPinRejected, invalidPinPreservedState, pinEnabled, pinDisabled };
+  const updateSafety = await window.webContents.executeJavaScript(`(async () => {
+    const status = await window.daylightDesktop.getUpdateStatus();
+    const checked = await window.daylightDesktop.checkForUpdates();
+    const downloaded = await window.daylightDesktop.downloadUpdate();
+    let invalidEditingRejected = false;
+    try { await window.daylightDesktop.setUpdateEditing('false'); } catch { invalidEditingRejected = true; }
+    return { disabledInSmoke: status.mode === 'disabled' && status.state === 'disabled',
+      noUpdateWork: checked.state === 'disabled' && downloaded.state === 'disabled',
+      invalidEditingRejected };
+  })()`);
   const interfaceChecks = await require('./ui-smoke.cjs')(window, origin, smokeOutput);
   const ok = response.ok && Array.isArray(state.tasks) && Boolean(state.csrfToken)
     && renderer.nodeUnavailable && rendererLoaded && Boolean(renderer.info.dataPath)
     && renderer.pinButtonAvailable && renderer.cornerNotesRemoved
-    && Object.values(pinning).every(Boolean) && Object.values(interfaceChecks.checks).every(Boolean);
+    && Object.values(pinning).every(Boolean) && Object.values(updateSafety).every(Boolean) && Object.values(interfaceChecks.checks).every(Boolean);
   const screenshotPath = smokeOutput.replace(/\.json$/i, '') + '.png';
   fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
   fs.writeFileSync(screenshotPath, (await window.webContents.capturePage()).toPNG());
   writeSmoke({ ok, origin, apiAvailable: response.ok, rendererLoaded,
     title: renderer.title, renderedText: renderer.content.slice(0, 2000), nativeInfo: renderer.info, nodeUnavailable: renderer.nodeUnavailable,
-    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, interfaceChecks,
+    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, interfaceChecks, updateSafety,
     pinButtonAvailable: renderer.pinButtonAvailable, cornerNotesRemoved: renderer.cornerNotesRemoved, screenshotPath,
     windowSecurity: window.webContents.getLastWebPreferences(), trayAvailable: Boolean(tray),
     notificationsEnabled: state.settings.desktopNotifications, packaged: app.isPackaged });
@@ -267,6 +294,7 @@ async function boot() {
     disabled: smoke || Boolean(process.env.PORTABLE_EXECUTABLE_DIR),
     installedRuntime: app.isPackaged && !smoke && !process.env.PORTABLE_EXECUTABLE_DIR,
     notify: status => { if (window && !window.isDestroyed()) window.webContents.send('daylight:mcp-status-changed', status); } });
+  updates = createDesktopUpdates({ app, shell, service, smoke, getWindow: () => window, getMcpStatus: () => mcp.getStatus() });
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -277,6 +305,7 @@ async function boot() {
   });
   setupIpc();
   await createWindow();
+  updates.start();
   if (!smoke) void mcp.start();
   if (!smoke && !app.isPackaged && process.argv.includes('--demo-weather')) {
     await require('./demo.cjs')({ window, origin, profileDir, root: app.getAppPath(), mcp });
@@ -291,6 +320,7 @@ app.on('before-quit', event => {
   event.preventDefault();
   if (shutdownStarted) return;
   shutdownStarted = true;
+  updates?.dispose();
   const hadRun = Boolean(service?.scheduler.activeRun);
   Promise.resolve(service?.close()).catch(console.error).finally(async () => {
     if (hadRun) await new Promise(resolve => setTimeout(resolve, 1000));

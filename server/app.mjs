@@ -47,6 +47,18 @@ export async function createApp(options = {}) {
     intervalMs: options.intervalMs, timeoutMs: options.timeoutMs });
   const configuredOrigins = options.allowedOrigins || (process.env.DAYLIGHT_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').filter(Boolean);
   const iso = () => now().toISOString();
+  let updatePending = false;
+  const updateBridges = new Map();
+  function pendingBridges() {
+    for (const [id, lease] of updateBridges) {
+      if (Date.now() - lease.seen > 10000) { updateBridges.delete(id); continue; }
+      if (lease.acknowledged && lease.pid) {
+        try { process.kill(lease.pid, 0); }
+        catch (error) { if (error.code === 'ESRCH') updateBridges.delete(id); }
+      }
+    }
+    return updateBridges.size;
+  }
 
   function validateRequest(request, response) {
     const port = request.socket.localPort;
@@ -95,6 +107,21 @@ export async function createApp(options = {}) {
       }
       const data = store.data;
       if (method === 'GET') {
+        if (pathname === '/api/update-state') {
+          pendingBridges();
+          const bridge = url.searchParams.get('bridge');
+          const rawPid = url.searchParams.get('pid');
+          const parsedPid = rawPid && /^[1-9]\d{0,9}$/.test(rawPid) ? Number(rawPid) : null;
+          const pid = Number.isSafeInteger(parsedPid) && parsedPid <= 2147483647 ? parsedPid : null;
+          if (bridge && /^[a-f0-9-]{36}$/.test(bridge)) {
+            if (updatePending && !pid) updateBridges.delete(bridge);
+            else if (updateBridges.size < 100 || updateBridges.has(bridge)) {
+              updateBridges.set(bridge, { pid, seen: Date.now(), acknowledged: updatePending });
+            }
+          }
+          pendingBridges();
+          return respond(response, 200, { updating: updatePending });
+        }
         if (pathname === '/api/weather') return respond(response, 200, await weather.getWeather(url.searchParams));
         if (pathname === '/api/weather/locations') return respond(response, 200, await weather.searchLocations(url.searchParams));
         if (pathname === '/api/weather/location') return respond(response, 200, await weather.getLocation(url.searchParams));
@@ -119,6 +146,7 @@ export async function createApp(options = {}) {
       const expectedToken = Buffer.from(csrfToken);
       if (suppliedToken.length !== expectedToken.length || !timingSafeEqual(suppliedToken, expectedToken)) throw new HttpError(403, 'Missing or invalid Daylight token. Reload the app and try again.');
       const input = await body(request);
+      if (updatePending) throw new HttpError(503, 'Daylight is installing an update. Try again after it restarts.');
       if (pathname === '/api/tasks' && method === 'POST') {
         const task = { ...taskInput(input, null, data.projects), id: randomUUID(), createdAt: iso(), updatedAt: iso() };
         data.tasks.unshift(task); store.save(); return respond(response, 201, task);
@@ -170,6 +198,8 @@ export async function createApp(options = {}) {
   let listening = false;
   return {
     server, store, scheduler, codex,
+    setUpdatePending(value) { updatePending = value === true; scheduler.setUpdatePending(updatePending); },
+    get pendingUpdateBridges() { return pendingBridges(); },
     async listen(port = Number(process.env.DAYLIGHT_PORT || 4317)) {
       await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { server.off('error', reject); resolve(); }); });
       listening = true;

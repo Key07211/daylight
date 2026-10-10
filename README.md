@@ -4,7 +4,7 @@
 
 A Windows task app that follows the light, weather, and rhythm of your day. Plan locally, enjoy liquid glass and changing skies, and connect your task list to Codex.
 
-**Windows x64 · v0.3.0 · English / 中文 · Local storage**
+**Windows x64 · v0.4.0 · English / 中文 · Local storage**
 
 [Download](https://github.com/Key07211/daylight/releases/latest) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [User guide (中文)](docs/USER_GUIDE.md) · [MCP guide (中文)](docs/MCP_GUIDE.md)
 
@@ -12,13 +12,13 @@ A Windows task app that follows the light, weather, and rhythm of your day. Plan
 
 ## Get started
 
-Download `Daylight-Setup-0.3.0.exe` from [Releases](https://github.com/Key07211/daylight/releases/latest), close any older version, and follow the installer. Open Daylight from the desktop or Start menu. No separate Node.js installation is needed. The installed app supports automatic Codex MCP connection and optional launch at Windows sign-in.
+Download the latest `Daylight-Setup-<version>.exe` from [Releases](https://github.com/Key07211/daylight/releases/latest), close any older version, and follow the installer. Open Daylight from the desktop or Start menu. No separate Node.js installation is needed. The installed app supports automatic Codex MCP connection and optional launch at Windows sign-in.
 
-For the portable edition, extract `Daylight-Portable-0.3.0.zip` and run the included app. It does not register MCP or launch at sign-in. Both editions share `%APPDATA%\Daylight` on the computer; run only one at a time. Portable data is not stored beside the executable.
+For the portable edition, extract `Daylight-Portable-<version>.zip` and run the included app. It does not register MCP or launch at sign-in. Both editions share `%APPDATA%\Daylight` on the computer; run only one at a time. Portable data is not stored beside the executable.
 
 Release executables are **unsigned**, so Windows may show an unknown-publisher warning. SHA-256 checksums and a validation summary are included on the release page.
 
-Project filtering is available in the current source and demo. Windows downloads remain the existing v0.3.0 build.
+From v0.4.0, the installed app checks for updates at startup and every six hours. A blue dot to the right of Pin opens the available update. Choose **Download & restart immediately** to download it; installation and restart begin as soon as the download is verified, with no countdown. An active editor or running Codex task is allowed to finish first. Older versions need one manual installation to enable this feature. Portable updates remain manual. See the [update guide](docs/UPDATES.md).
 
 ## Features
 
@@ -30,6 +30,7 @@ Project filtering is available in the current source and demo. Windows downloads
 | Weather and openings | City-based clouds, rain, and snow; a sun moving toward the current time, a brightening moon, and descending stars |
 | Liquid glass | Adjust transparency, blur, and highlights; watch rain slide into the glass edge and sunflowers react to droplets |
 | Desktop controls | Always-on-top, tray controls, English / Chinese, reduced motion, and JSON export |
+| Updates | Automatic version checks, a blue update dot beside Pin, download progress, and automatic install/restart after a requested download |
 | Codex MCP | Let Codex read and manage tasks, notifications, and run results through 14 tools |
 | Codex scheduling | Give a task a prompt, working directory, execution time, and repeat rule for the local `codex exec` command |
 
@@ -53,7 +54,7 @@ MCP edits take effect directly, without the app's confirmation dialogs, so ident
 
 Explore the animated walkthrough in [English](https://key07211.github.io/daylight/demo.html?lang=en) or [中文](https://key07211.github.io/daylight/demo.html?lang=zh). Day, night, rain, and opening scenes play automatically with a visible pause control. Reduced-motion preferences start the demo with still previews; you can opt into playback. The language switch changes both the page text and its sample app captures. The demo uses isolated example tasks and does not change your real list or run Codex.
 
-For offline viewing, download `Daylight-Demo-0.3.0.zip` from Releases, extract it, and open `docs/demo.html` in a browser. Keep the accompanying files together. The repository also includes the [demo page](docs/demo.html) and [demo notes](docs/DEMO.md).
+For offline viewing, download `Daylight-Demo-<version>.zip` from Releases, extract it, and open `docs/demo.html` in a browser. Keep the accompanying files together. The repository also includes the [demo page](docs/demo.html) and [demo notes](docs/DEMO.md).
 
 The original [Figma v1 design](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) records the early concept. Current visuals and motion are implemented in the app; see the [design notes](design/day-night-spec.md).
 
@@ -61,7 +62,7 @@ The original [Figma v1 design](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJV
 
 Both desktop editions store tasks at `%APPDATA%\Daylight\data\store.json`. Open the data folder from Settings. Updates and uninstalling preserve tasks by default. Export JSON for a backup; there is currently no import button. Recovery instructions are in the [user guide](docs/USER_GUIDE.md).
 
-The source server uses the project's `data/` folder by default. Real tasks, logs, Codex configuration, installers, and local runtime records are excluded from this repository. Weather requests use the network, and content sent to Codex is processed through Codex online.
+The source server uses the project's `data/` folder by default. Real tasks, logs, Codex configuration, installers, and local runtime records are excluded from this repository. Weather requests and GitHub update checks use the network. Update checks do not send your task list. Content sent to Codex is processed through Codex online.
 
 ## Run from source
 
@@ -86,9 +87,11 @@ node desktop/smoke-packaged.mjs
 node desktop/smoke-portable.mjs
 node desktop/verify-installer.mjs
 node desktop/smoke-mcp-migration.mjs
+node scripts/verify-update-release.mjs
+.\node_modules\.bin\electron.cmd desktop/update-download-smoke.cjs
 ```
 
-The build produces an NSIS installer and a portable executable. Checks use isolated data and ports to cover task actions, native integration, a real MCP stdio handshake, and portable startup. Migration checks require the local Codex CLI and an isolated `CODEX_HOME`. Installer verification extracts the payload and compares hashes; it does not replace an installation test. `VALIDATION-0.3.0.json` in the release records the published build's results.
+The build produces an NSIS installer, a portable executable, and update metadata. Checks use isolated data and ports to cover task actions, native integration, a real MCP stdio handshake, and portable startup. Migration checks require the local Codex CLI and an isolated `CODEX_HOME`. Installer verification extracts the payload and compares hashes; it does not replace an installation test. The release's `VALIDATION-<version>.json` records its checks. Matching version tags trigger the [Windows release workflow](.github/workflows/release.yml); see [publishing updates](docs/UPDATES.md#release-a-new-version).
 
 For system-clock and opening regressions:
 

@@ -3,6 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 
 const dateTime = z.string().datetime({ offset: true }).nullable();
 const taskId = z.string().min(1).max(200);
@@ -158,4 +159,30 @@ export function createDaylightServer({ baseUrl = localBaseUrl() } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const server = createDaylightServer();
   await server.connect(new StdioServerTransport());
+  // Release the installed executable/ASAR before an in-app update. Only this
+  // bridge exits; the Codex client remains open and can reconnect after restart.
+  const bridge = randomUUID();
+  let checking = false;
+  let closing = false;
+  const checkUpdate = async () => {
+    if (checking || closing) return;
+    checking = true;
+    try {
+      const response = await fetch(`${localBaseUrl()}/api/update-state?bridge=${bridge}&pid=${process.pid}`, {
+        redirect: 'error', signal: AbortSignal.timeout(3000),
+      });
+      if (response.ok && (await response.json()).updating === true) {
+        closing = true;
+        clearInterval(updateTimer);
+        await server.close();
+        // Let Windows finish closing its pipe handles before the process exits.
+        process.stdin.destroy();
+        process.exitCode = 0;
+      }
+    } catch { /* An older or temporarily unavailable app does not stop MCP. */ }
+    finally { checking = false; }
+  };
+  const updateTimer = setInterval(checkUpdate, 2000);
+  updateTimer.unref();
+  void checkUpdate();
 }

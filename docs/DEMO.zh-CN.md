@@ -17,7 +17,7 @@
 
 ## 离线查看
 
-解压 `Daylight-Demo-0.3.0.zip`，用 Edge、Chrome 或 Firefox 打开其中的 `docs/demo.html`。保留随附文件与 `media` 文件夹，无需安装应用、启动本地服务、安装依赖或连接网络。
+解压 `Daylight-Demo-0.4.0.zip`，用 Edge、Chrome 或 Firefox 打开其中的 `docs/demo.html`。保留随附文件与 `media` 文件夹，无需安装应用、启动本地服务、安装依赖或连接网络。
 
 也可以下载本仓库，直接打开 `docs/demo.html`。默认使用英文，离线时也能切换中文。
 

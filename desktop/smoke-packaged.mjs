@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import assert from 'node:assert/strict';
 import asar from '@electron/asar';
+import yaml from 'js-yaml';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { createApp } from '../server/app.mjs';
@@ -86,11 +87,20 @@ try {
   const archiveFiles = new Set(asar.listPackage(archive).map(entry => entry.replaceAll('\\', '/').replace(/^\//, '')));
   const requiredFiles = ['package.json', 'dist/index.html', 'desktop/main.cjs', 'desktop/preload.cjs',
     'desktop/ui-smoke.cjs', 'desktop/codex-path.cjs', 'desktop/mcp-controller.cjs', 'desktop/mcp-connection.cjs', 'desktop/mcp-migration.cjs',
+    'desktop/update-controller.cjs', 'desktop/update-service.cjs', 'node_modules/electron-updater/package.json', 'node_modules/electron-updater/out/main.js',
     'server/app.mjs', 'server/store.mjs', 'server/scheduler.mjs', 'integrations/mcp-server.mjs'];
   for (const entry of requiredFiles) assert.ok(archiveFiles.has(entry), `Missing packaged dependency: ${entry}`);
   const packageInfo = JSON.parse(asar.extractFile(archive, 'package.json').toString('utf8'));
   const sourcePackage = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
   assert.equal(packageInfo.version, sourcePackage.version, 'The packaged app must match the current release version');
+  assert.ok(packageInfo.dependencies?.['electron-updater'], 'Updater must be a production dependency');
+  assert.equal(packageInfo.dependencies['electron-updater'], sourcePackage.dependencies['electron-updater']);
+  const updaterConfigPath = path.join(path.dirname(executable), 'resources', 'app-update.yml');
+  const updaterConfig = yaml.load(await fs.readFile(updaterConfigPath, 'utf8'));
+  assert.equal(updaterConfig?.provider, 'github', 'Packaged updater must use GitHub Releases');
+  assert.equal(updaterConfig.owner, 'Key07211', 'Updater owner must match the public repository');
+  assert.equal(updaterConfig.repo, 'daylight', 'Updater repository must match the public repository');
+  assert.notEqual(updaterConfig.private, true, 'Public releases must not require an embedded GitHub credential');
   const uiSmokeSource = asar.extractFile(archive, 'desktop/ui-smoke.cjs').toString('utf8');
   assert.ok(!/\.\.\/src\//.test(uiSmokeSource), 'Packaged UI smoke must not import unbundled source files');
   const expectedChecks = [...new Set([...uiSmokeSource.matchAll(/checks\.([A-Za-z_]\w*)\s*=/g)].map(match => match[1]))].sort();
@@ -124,7 +134,9 @@ try {
   assert.equal(report.windowSecurity.sandbox, true);
   assert.deepEqual(Object.keys(report.interfaceChecks?.checks || {}).sort(), expectedChecks, 'Every packaged UI check must execute');
   for (const [name, passed] of Object.entries(report.interfaceChecks.checks)) assert.equal(passed, true, `UI check failed: ${name}`);
-  assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setAutoLaunch', 'openDataFolder', 'installMcp', 'getMcpStatus', 'checkMcp', 'setMcpAutoConnect', 'onMcpStatus']);
+  assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setAutoLaunch', 'openDataFolder', 'installMcp', 'getMcpStatus', 'checkMcp', 'setMcpAutoConnect', 'onMcpStatus',
+    'getUpdateStatus', 'checkForUpdates', 'downloadUpdate', 'setUpdateEditing', 'onUpdateStatus']);
+  assert.deepEqual(report.updateSafety, { disabledInSmoke: true, noUpdateWork: true, invalidEditingRejected: true });
   assert.deepEqual(report.pinning, { initialPinStateMatches: true, invalidPinRejected: true, invalidPinPreservedState: true, pinEnabled: true, pinDisabled: true });
   assert.equal(JSON.parse(await fs.readFile(preferencesPath, 'utf8')).alwaysOnTop, false);
 
@@ -181,6 +193,8 @@ try {
     await fs.rm(realApiDir, { recursive: true, force: true });
   }
   report.packagingVerification = { archive, requiredFileCount: requiredFiles.length, expectedUiChecks: expectedChecks.length,
+    updater: { configPath: updaterConfigPath, provider: updaterConfig.provider, owner: updaterConfig.owner, repo: updaterConfig.repo,
+      productionDependency: true, controllerIncluded: true, serviceIncluded: true },
     guiTimeoutMs, isolatedProfile: profileDir, processLog: logPath, realUserConfigModified: false };
   await fs.writeFile(childOutput, JSON.stringify(report, null, 2));
   await fs.writeFile(output, JSON.stringify(report, null, 2));

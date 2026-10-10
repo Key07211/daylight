@@ -17,7 +17,7 @@ The demo has no audio. Its language, navigation, and playback controls affect on
 
 ## View offline
 
-Extract `Daylight-Demo-0.3.0.zip` and open `docs/demo.html` in Edge, Chrome, or Firefox. Keep the accompanying files and `media` folder together. No app installation, local server, dependencies, or internet connection is needed.
+Extract `Daylight-Demo-0.4.0.zip` and open `docs/demo.html` in Edge, Chrome, or Firefox. Keep the accompanying files and `media` folder together. No app installation, local server, dependencies, or internet connection is needed.
 
 You can also download the repository and open its `docs/demo.html` directly. English is the default; the language switch works offline.
 

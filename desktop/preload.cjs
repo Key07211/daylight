@@ -17,4 +17,14 @@ contextBridge.exposeInMainWorld('daylightDesktop', Object.freeze({
     ipcRenderer.on('daylight:mcp-status-changed', listener);
     return () => ipcRenderer.removeListener('daylight:mcp-status-changed', listener);
   },
+  getUpdateStatus: () => ipcRenderer.invoke('daylight:update-status'),
+  checkForUpdates: () => ipcRenderer.invoke('daylight:check-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('daylight:download-update'),
+  setUpdateEditing: editing => ipcRenderer.invoke('daylight:update-editing', editing),
+  onUpdateStatus: callback => {
+    if (typeof callback !== 'function') throw new TypeError('A status callback is required.');
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('daylight:update-status-changed', listener);
+    return () => ipcRenderer.removeListener('daylight:update-status-changed', listener);
+  },
 }));

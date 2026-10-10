@@ -203,7 +203,14 @@ test('real MCP probe initializes, lists permitted tools and calls read-only stat
     registration: registration({ enabled_tools: ['daylight_status', 'daylight_list_tasks'], disabled_tools: ['daylight_list_tasks'] }),
   });
   assert.deepEqual(result, { toolCount: 1, serviceUrl });
-  assert.deepEqual(requests, [{ method: 'GET', path: '/api/bootstrap' }]);
+  assert.equal(requests.length, 2);
+  assert.ok(requests.every(request => request.method === 'GET'), 'The connection probe must remain read-only');
+  assert.deepEqual(requests.filter(request => request.path === '/api/bootstrap'), [{ method: 'GET', path: '/api/bootstrap' }]);
+  const watcher = requests.filter(request => request.path.startsWith('/api/update-state?'));
+  assert.equal(watcher.length, 1);
+  const watchUrl = new URL(watcher[0].path, serviceUrl);
+  assert.match(watchUrl.searchParams.get('bridge'), /^[a-f0-9-]{36}$/);
+  assert.match(watchUrl.searchParams.get('pid'), /^[1-9]\d*$/);
 });
 
 test('disabled status tool prevents even the read-only probe call', async () => {

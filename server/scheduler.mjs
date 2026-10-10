@@ -39,6 +39,7 @@ export function createScheduler({ store, codex, command = process.env.CODEX_BIN 
   let active = null;
   let interval = null;
   let stopped = false;
+  let updatePending = false;
   const iso = () => now().toISOString();
   for (const run of store.data.runs) {
     if (run.status === 'running') {
@@ -74,6 +75,7 @@ export function createScheduler({ store, codex, command = process.env.CODEX_BIN 
   function startRun(task, trigger = 'manual') {
     if (active) throw new HttpError(409, 'A Codex run is already in progress. Wait for it to finish or cancel it.');
     if (stopped) throw new HttpError(503, 'Daylight is shutting down.');
+    if (updatePending) throw new HttpError(503, 'Daylight is installing an update. Try again after it restarts.');
     if (task.completed) throw new HttpError(409, 'Reopen the task before running Codex.');
     if (!codex.available) throw new HttpError(503, 'Codex CLI was not found. Install or sign in to Codex, then restart Daylight.');
     const workspace = validateWorkspace(task.automation.workspace);
@@ -154,7 +156,7 @@ export function createScheduler({ store, codex, command = process.env.CODEX_BIN 
         notification(task, 'reminder', task.title, task.notes.trim().slice(0, 500) || '这项任务的提醒时间到了。');
       }
     }
-    if (active) return;
+    if (active || updatePending) return;
     const task = store.data.tasks.filter(item => !item.completed && item.automation.enabled && item.automation.runAt && new Date(item.automation.runAt) <= current)
       .sort((a, b) => a.automation.runAt.localeCompare(b.automation.runAt))[0];
     if (task) {
@@ -169,6 +171,7 @@ export function createScheduler({ store, codex, command = process.env.CODEX_BIN 
   }
   return {
     tick, startRun, cancelRun, get activeRun() { return active?.run ?? null; },
+    setUpdatePending(value) { updatePending = value === true; },
     start() { if (!interval) { stopped = false; tick(); interval = setInterval(tick, intervalMs); interval.unref?.(); } },
     stop() {
       stopped = true; clearInterval(interval); interval = null;
