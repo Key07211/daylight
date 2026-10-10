@@ -27,6 +27,8 @@ Windows 安装版启动后检查 GitHub Releases，运行期间每六小时再�
 
 完整动画界面检查会在 GitHub 托管的临时 Windows 会话中启用客户端区域动画，并核对 Electron 未报告减少动态。运行器同时使用太平洋时区以匹配定时主题测试数据，包含夏令时。这些测试前提不改变应用的减少动态或时区行为，也不修改本机 Windows 设置。
 
+发行版关联既有标签；流程在上传前和公开前均核对远端标签与构建源码提交一致。流程不通过 `--target` 要求 GitHub 创建标签：该选项对既有标签不生效，而且指定提交包含旧工作流时可能要求额外的工作流权限。实际构建提交仍记录在 `VALIDATION-<version>.json`。详见 [GitHub 发行版 API](https://docs.github.com/en/rest/releases/releases#create-a-release)。
+
 以下更新文件由 electron-builder 生成，必须配套上传：
 
 | 文件 | 用途 |

@@ -243,13 +243,18 @@ jobs:
           } else {
             throw 'Could not confirm the latest public release; no draft was changed'
           }
-          $existing = gh release view $tag --json isDraft,targetCommitish 2>$null
+          $remoteCommit = gh api "repos/$env:GH_REPO/commits/$tag" --jq .sha
+          if ($LASTEXITCODE -ne 0 -or $remoteCommit -cne $env:DAYLIGHT_SOURCE_SHA) { throw 'Remote release tag no longer matches the verified source commit' }
+          $existing = gh release view $tag --json isDraft,tagName 2>$null
           if ($LASTEXITCODE -eq 0) {
             $release = $existing | ConvertFrom-Json
             if (-not $release.isDraft) { throw 'This version is already public. Publish fixes with a new version; existing releases are not overwritten.' }
-            if ($release.targetCommitish -ne $env:DAYLIGHT_SOURCE_SHA) { throw 'Existing draft belongs to a different commit.' }
+            if ($release.tagName -cne $tag) { throw 'Existing draft belongs to a different tag.' }
           } else {
-            gh release create $tag --verify-tag --draft --target $env:DAYLIGHT_SOURCE_SHA --title "Daylight $tag" --notes-file .runtime/release-notes.md
+            # The tag already exists and is verified above. --target only selects
+            # a commit for creating a new tag; it is not release-source metadata.
+            # Use the existing-tag API path with contents:write alone.
+            gh release create $tag --verify-tag --draft --title "Daylight $tag" --notes-file .runtime/release-notes.md
             if ($LASTEXITCODE -ne 0) { throw 'Could not create release draft' }
           }
           $assetNames = @(Get-Content -LiteralPath .runtime/release-assets.json -Raw | ConvertFrom-Json)
@@ -270,5 +275,7 @@ jobs:
               throw "Uploaded asset failed checksum or size verification: $name"
             }
           }
+          $remoteCommit = gh api "repos/$env:GH_REPO/commits/$tag" --jq .sha
+          if ($LASTEXITCODE -ne 0 -or $remoteCommit -cne $env:DAYLIGHT_SOURCE_SHA) { throw 'Remote tag changed during upload; release remains a draft' }
           gh release edit $tag --draft=false --latest
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
