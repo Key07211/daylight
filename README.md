@@ -1,6 +1,6 @@
 # Daylight
 
-**English** · [简体中文](README.zh-CN.md)
+[ENG](README.md) · [简体中文](README.zh-CN.md)
 
 A Windows task app that follows the light, weather, and rhythm of your day. Plan locally, enjoy liquid glass and changing skies, and connect your task list to Codex.
 
