@@ -16,12 +16,14 @@ Windows 安装版启动后检查 GitHub Releases，运行期间每六小时再�
 
 ## 发布新版本
 
-发布流程位于 [`.github/workflows/release.yml`](../.github/workflows/release.yml)，仅在 `Key07211/daylight` 推送 `v*` 标签时执行。普通代码推送和本地构建不会发布更新。
+发布流程位于 [`.github/workflows/release.yml`](../.github/workflows/release.yml)。在 `Key07211/daylight` 推送 `v*` 标签时执行，也可手动补发既有标签。普通代码推送和本地构建不会发布更新。
 
 1. 选择高于上个正式版本的新版本号，同时更新 `package.json` 与 `package-lock.json`，修改相应发布文档并提交。
 2. 推送该提交及完全一致的标签，例如包版本 `0.4.1` 对应 `v0.4.1`。
 3. Windows 流程安装锁定依赖、运行测试、构建安装版和免安装版，验证打包后的启动、安装器载荷以及更新清单。
 4. 所有文件先上传为草稿，逐一核对上传后的大小和 SHA-256，全部通过后才公开。公开前失败的版本不会被更新器发现；可重新运行流程，继续同一提交对应的草稿。已经公开的版本不会被覆盖。
+
+若推送标签后没有启动流程，可打开 **Actions → Windows release → Run workflow**，选择 `main`，填入已有标签，例如 `v0.4.0`。手动流程会检出该标签，核对 `HEAD` 与标签提交及包版本一致，并在发布记录和验证报告中使用实际源码提交。它不会使用较新的 `main` 应用代码构建，不会创建或移动标签，也不会覆盖已公开版本。
 
 以下更新文件由 electron-builder 生成，必须配套上传：
 

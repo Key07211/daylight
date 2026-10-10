@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing stable release tag, for example v0.4.0'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -23,12 +29,33 @@ jobs:
       run:
         shell: pwsh
     env:
-      DAYLIGHT_RELEASE_TAG: ${{ github.ref_name }}
+      DAYLIGHT_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
+      - name: Validate requested release tag
+        id: release-input
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:DAYLIGHT_RELEASE_TAG
+          if ($tag -cnotmatch '\Av(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\z') { throw 'Release tag must be an exact stable version such as v0.4.0' }
+          $sourceRef = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { "refs/tags/$tag" } else { $env:GITHUB_SHA }
+          "source_ref=$sourceRef" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
       - uses: actions/checkout@v6
         with:
+          ref: ${{ steps.release-input.outputs.source_ref }}
+          fetch-depth: 0
           persist-credentials: false
+      - name: Verify immutable source commit
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tagRef = "refs/tags/$env:DAYLIGHT_RELEASE_TAG"
+          $tagCommit = git rev-parse --verify "${tagRef}^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw 'Requested release tag must already exist' }
+          $sourceCommit = git rev-parse --verify HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Could not identify the checked out source commit' }
+          if ($sourceCommit -cne $tagCommit) { throw 'Checked out HEAD differs from the requested release tag' }
+          if ($env:GITHUB_EVENT_NAME -eq 'push' -and $sourceCommit -cne $env:GITHUB_SHA) { throw 'Checked out source differs from the tag push commit' }
+          "DAYLIGHT_SOURCE_SHA=$sourceCommit" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -73,7 +100,7 @@ jobs:
           Compress-Archive -Path (Join-Path $demoStage '*') -DestinationPath "release/Daylight-Demo-$version.zip"
           $report = [ordered]@{
             version = $version
-            sourceCommit = $env:GITHUB_SHA
+            sourceCommit = $env:DAYLIGHT_SOURCE_SHA
             builtAt = [DateTime]::UtcNow.ToString('o')
             platform = 'win32-x64'
             signed = $false
@@ -130,9 +157,9 @@ jobs:
           if ($LASTEXITCODE -eq 0) {
             $release = $existing | ConvertFrom-Json
             if (-not $release.isDraft) { throw 'This version is already public. Publish fixes with a new version; existing releases are not overwritten.' }
-            if ($release.targetCommitish -ne $env:GITHUB_SHA) { throw 'Existing draft belongs to a different commit.' }
+            if ($release.targetCommitish -ne $env:DAYLIGHT_SOURCE_SHA) { throw 'Existing draft belongs to a different commit.' }
           } else {
-            gh release create $tag --verify-tag --draft --target $env:GITHUB_SHA --title "Daylight $tag" --notes-file .runtime/release-notes.md
+            gh release create $tag --verify-tag --draft --target $env:DAYLIGHT_SOURCE_SHA --title "Daylight $tag" --notes-file .runtime/release-notes.md
             if ($LASTEXITCODE -ne 0) { throw 'Could not create release draft' }
           }
           $assetNames = @(Get-Content -LiteralPath .runtime/release-assets.json -Raw | ConvertFrom-Json)
