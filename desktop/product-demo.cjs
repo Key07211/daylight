@@ -1,5 +1,5 @@
 // Developer-only public media capture. Never opens a user's Daylight profile.
-// Run after building: electron desktop/product-demo.cjs [--english]
+// Run after building: electron desktop/product-demo.cjs [--english] [--motion-only]
 const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -11,6 +11,7 @@ const runtime = path.join(root, '.runtime');
 fs.mkdirSync(runtime, { recursive: true });
 const profile = fs.mkdtempSync(path.join(runtime, 'product-demo-'));
 const english = process.argv.includes('--english');
+const motionOnly = process.argv.includes('--motion-only');
 const captureLanguage = english ? 'en' : 'zh';
 const mediaRoot = path.join(root, 'docs', 'media');
 const media = english ? path.join(mediaRoot, 'en') : mediaRoot;
@@ -19,8 +20,8 @@ app.setName('Daylight Product Demo');
 app.setPath('userData', profile);
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 let service, window, origin, injection;
-const report = { language: captureLanguage, isolated: true, externalRequests: 0, mcpConfigured: false, schedulerStarted: false, screenshots: [], checks: [] };
-setTimeout(() => { console.error('Product capture exceeded its three-minute deadline.'); app.exit(1); }, 180000).unref();
+const report = { language: captureLanguage, isolated: true, externalRequests: 0, mcpConfigured: false, schedulerStarted: false, screenshots: [], motion: [], checks: [] };
+setTimeout(() => { console.error('Product capture exceeded its five-minute deadline.'); app.exit(1); }, 300000).unref();
 
 app.whenReady().then(async () => {
   if (process.argv.includes('--verify-docs')) return verifyDocs();
@@ -89,7 +90,33 @@ app.whenReady().then(async () => {
   await window.webContents.debugger.sendCommand('Emulation.setTimezoneOverride', { timezoneId: 'America/Los_Angeles' });
   await scenario('day');
   await click('[data-view="all"]');
+  if (motionOnly) {
+    await captureMotion('tasks-day');
+    await click('[data-language="en"]');
+    await click('.window-pin');
+    await until('document.querySelector(".window-pin")?.getAttribute("aria-pressed")==="true"');
+    await captureMotion('tasks-english');
+    await click('.window-pin');
+    await scenario('night');
+    await click('[data-view="all"]');
+    await captureMotion('tasks-night');
+    await scenario('rain');
+    await click('[data-view="all"]');
+    await captureMotion('tasks-rain');
+    assert.equal(report.externalRequests, 0);
+    assert.equal(service.store.data.runs.length, 0);
+    assert.equal((await request('/tasks', 'GET')).filter(item => item.completed).length, 1);
+    report.checks.push('Fresh isolated profile', 'Six synthetic tasks only', 'No external requests', 'No Codex registration or execution', 'Actual application motion');
+    fs.writeFileSync(path.join(runtime, `product-demo-motion-report${english ? '-en' : ''}.json`), JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(report));
+    await service.close(); window.destroy(); app.quit(); return;
+  }
   await capture('tasks-day');
+  await evaluate('document.querySelector("#task-project-filter").value="general"; document.querySelector("#task-project-filter").dispatchEvent(new Event("change",{bubbles:true}))');
+  await until('document.querySelector("#task-project-filter").value === "general" && document.querySelectorAll(".task-row").length === 3');
+  await capture('project-filter');
+  await evaluate('document.querySelector("#task-project-filter").value="all"; document.querySelector("#task-project-filter").dispatchEvent(new Event("change",{bubbles:true}))');
+  await until('document.querySelectorAll(".task-row").length === 5');
   await click('.task-main');
   await until('!!document.querySelector(".task-form")');
   await capture('task-editor');
@@ -148,6 +175,54 @@ async function capture(name) {
   const image = (await window.webContents.capturePage()).toPNG();
   await sharp(image).resize({ width: 1440 }).webp({ quality: 90 }).toFile(path.join(media, `${name}.webp`));
   report.screenshots.push(name);
+}
+async function captureMotion(name) {
+  console.log(`Recording ${name}-motion`);
+  await delay(600);
+  const text = await evaluate('document.body.innerText');
+  if (english) assert.ok(!/\p{Script=Han}/u.test(text.replaceAll('中文', '')), `Unexpected Chinese content in English motion: ${name}`);
+  const username = require('node:os').userInfo().username;
+  assert.ok(!/[\w.+-]+@[\w.-]+\.[a-z]{2,}|AppData[\\/]|[\\/]Users[\\/]|[\\/]home[\\/]/i.test(text)
+    && (!username || !text.toLowerCase().includes(username.toLowerCase())), `Private content in ${name}`);
+  const frames = [], width = 1200, height = 800, duration = 6000, interval = 1000 / 12;
+  const started = Date.now();
+  // Read native BGRA buffers during recording; encode after it to keep cadence.
+  // Native images may use the host display's device scale, so normalize here.
+  const onPaint = (_event, _dirty, image) => {
+    const elapsed = Date.now() - started;
+    if (elapsed > duration || (frames.length && elapsed - frames.at(-1).time < interval)) return;
+    frames.push({ time: elapsed, pixels: image.resize({ width, height, quality: 'good' }).toBitmap() });
+  };
+  window.webContents.on('paint', onPaint);
+  window.webContents.startPainting();
+  window.webContents.invalidate();
+  await delay(duration + 50);
+  window.webContents.removeListener('paint', onPaint);
+  assert.ok(frames.length >= 40, `Insufficient real-time motion frames: ${name} (${frames.length})`);
+  const raw = [];
+  for (const frame of frames) {
+    raw.push(await sharp(frame.pixels, { raw: { width, height, channels: 4 } })
+      .recomb([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+      .raw().toBuffer());
+    frame.pixels = null;
+  }
+  const delays = frames.map((frame, index) => index < frames.length - 1
+    ? frames[index + 1].time - frame.time : Math.max(1, duration - frame.time + frames[0].time));
+  const first = raw[0], last = raw[Math.floor(raw.length / 2)];
+  let changedPixels = 0;
+  for (let index = 0; index < first.length; index += 4) {
+    if (Math.max(Math.abs(first[index] - last[index]), Math.abs(first[index + 1] - last[index + 1]), Math.abs(first[index + 2] - last[index + 2])) > 5) changedPixels++;
+  }
+  assert.ok(changedPixels > width * height * 0.0005, `Recorded view has no visible animation: ${name} (${changedPixels} changing pixels)`);
+  const output = path.join(media, `${name}-motion.webp`);
+  await sharp(Buffer.concat(raw), { raw: { width, height: height * raw.length, channels: 4, pageHeight: height } })
+    .webp({ quality: 78, loop: 0, delay: delays, effort: 3 }).toFile(output);
+  const metadata = await sharp(output, { animated: true }).metadata();
+  assert.equal(metadata.pages, frames.length);
+  const result = { name: `${name}-motion.webp`, frames: frames.length, durationMs: delays.reduce((sum, delay) => sum + delay, 0), width, height,
+    changedPixels, changedPercent: Number((changedPixels / (width * height) * 100).toFixed(2)), bytes: fs.statSync(output).size };
+  report.motion.push(result);
+  console.log(JSON.stringify(result));
 }
 async function scenario(mode) {
   console.log(`Loading ${mode}`);
@@ -214,7 +289,7 @@ async function verifyDocs() {
   assert.ok(await evaluate('document.querySelector("#scene-image").src.includes("/media/en/")'), 'Default image must use English assets');
   const chineseAssets = fs.readdirSync(mediaRoot).filter(name => name.endsWith('.webp')).sort();
   const englishAssets = fs.readdirSync(path.join(mediaRoot, 'en')).filter(name => name.endsWith('.webp')).sort();
-  assert.equal(chineseAssets.length, 14, 'All Chinese screenshots, movies and posters must exist');
+  assert.equal(chineseAssets.length, 19, 'All Chinese screenshots, movies and posters must exist');
   assert.deepEqual(englishAssets, chineseAssets, 'The English capture set must match the Chinese set');
   const assets = [...chineseAssets, ...englishAssets.map(name => `en/${name}`)];
   const imageResults = await evaluate(`Promise.all(${JSON.stringify(assets)}.map(name=>new Promise(resolve=>{const image=new Image(); image.onload=()=>resolve({name,width:image.naturalWidth});image.onerror=()=>resolve({name,width:0});image.src='media/'+name})))`);
@@ -226,9 +301,21 @@ async function verifyDocs() {
   assert.equal(await evaluate('document.documentElement.lang'), 'en');
   await click('[data-chapter="atmosphere"]'); await click('[data-shot="tasks-night"]');
   assert.equal(await evaluate('document.documentElement.dataset.theme'), 'night');
-  await click('[data-chapter="opening"]'); await click('#play-opening');
-  assert.equal(await evaluate('document.querySelector("#play-opening").getAttribute("aria-pressed")'), 'true');
-  await click('#play-opening');
+  await click('[data-chapter="opening"]');
+  assert.equal(await evaluate('document.querySelector("#motion-toggle").getAttribute("aria-pressed")'), 'true');
+  assert.ok(await evaluate('document.querySelector("#scene-image").src.endsWith("opening-day.webp")'));
+  await click('#motion-toggle');
+  assert.ok(await evaluate('document.querySelector("#scene-image").src.endsWith("opening-day-still.webp")'));
+  await click('#motion-toggle');
+  await click('[data-chapter="tasks"]');
+  await evaluate('document.querySelector("#zoom-image").focus()');
+  await click('#zoom-image');
+  assert.ok(await evaluate('document.querySelector("#zoom-dialog").open && document.querySelector("#zoom-content").src.endsWith("tasks-day-motion.webp")'));
+  await click('#close-zoom');
+  assert.equal(await evaluate('document.activeElement.id'), 'zoom-image');
+  await click('#auto-tour');
+  await until('document.querySelector("[data-shot=task-editor]")?.getAttribute("aria-pressed") === "true"');
+  await click('#auto-tour');
   await click('[data-chapter="tasks"]');
   await until('document.querySelector("#scene-image").complete && document.querySelector("#scene-image").naturalWidth > 0');
   fs.writeFileSync(path.join(runtime, 'product-demo-page-desktop.png'), (await window.webContents.capturePage()).toPNG());
@@ -253,6 +340,8 @@ async function verifyDocs() {
     }
   }
   assert.equal(network.length, 0); assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ offline: true, desktop: true, mobile: true, defaultEnglish: true, queryLanguages: true, languageSwitch: true, assets: assets.length, chapters: true, gallery: true, openingPlayback: true, errors }));
+  const result = { offline: true, desktop: true, mobile: true, defaultEnglish: true, queryLanguages: true, languageSwitch: true, assets: assets.length, chapters: true, gallery: true, openingPlayback: true, animatedZoom: true, tourIncludesViews: true, errors };
+  fs.writeFileSync(path.join(runtime, 'product-demo-page-report.json'), JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(result));
   window.destroy(); app.quit();
 }

@@ -2761,6 +2761,48 @@ input[type="checkbox"] { width: 16px; height: 16px; }
 .group-heading { margin-bottom: 11px; }
 .group-heading h3 { font-size: 13px; font-weight: 600; }
 .group-heading.overdue h3 { color: var(--danger); }
+.task-project-heading { margin-top: 26px; flex-wrap: wrap; min-height: 36px; }
+.task-project-heading + .task-list > .task-group:first-child { margin-top: 0; }
+.project-filter-control {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: min(240px, 48vw);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--surface-raised), 0 3px 12px var(--glass-shadow);
+  backdrop-filter: blur(14px) saturate(125%);
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.project-filter-control:hover { background: var(--surface-raised); border-color: var(--green); }
+.project-filter-control:focus-within { outline: 2px solid var(--green); outline-offset: 3px; }
+.project-filter-control > svg { position: absolute; pointer-events: none; color: var(--muted); }
+.project-filter-control > svg:first-child { left: 10px; }
+.project-filter-control > svg:last-child { right: 9px; }
+.project-filter-control select {
+  appearance: none;
+  cursor: pointer;
+  min-width: 132px;
+  max-width: 100%;
+  padding: 8px 28px 8px 31px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  outline: none;
+}
+.project-filter-control option { background: var(--surface); color: var(--text); }
+@media (max-width: 520px) {
+  .task-project-heading { column-gap: 5px; row-gap: 9px; }
+  .project-filter-control { max-width: 48vw; }
+  .project-filter-control select { min-width: 120px; font-size: 12px; }
+}
 .task-row { gap: 10px; padding: 16px 12px 16px 9px; min-height: 92px; border: 1px solid var(--line); border-radius: 13px; margin-bottom: 9px; background: var(--surface); transition: background .18s, border-color .18s, box-shadow .18s; }
 .task-row:hover { background: var(--surface-raised); border-color: var(--line-strong); box-shadow: 0 9px 25px var(--glass-shadow); }
 .task-title { font-size: 17px; font-weight: 500; line-height: 1.55; color: var(--text); overflow-wrap: anywhere; }

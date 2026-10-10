@@ -262,6 +262,7 @@ function App() {
     [view, setView] = useState("today"),
     [search, setSearch] = useState(""),
     [priorityFilter, setPriorityFilter] = useState("all"),
+    [projectFilter, setProjectFilter] = useState("all"),
     [sort, setSort] = useState("due"),
     [filters, setFilters] = useState(false),
     [editor, setEditor] = useState(null),
@@ -332,6 +333,16 @@ function App() {
     };
   }, []);
   useEffect(() => {
+    if (!data) return;
+    const projectIds = new Set((data.projects || []).map(project => project.id));
+    if (view.startsWith("project:") && !projectIds.has(view.slice(8))) {
+      setView("all");
+      setProjectFilter("all");
+    } else if (!["all", "general"].includes(projectFilter) && !projectIds.has(projectFilter)) {
+      setProjectFilter("all");
+    }
+  }, [data, view, projectFilter]);
+  useEffect(() => {
     const key = (e) => {
       if (!data || editor || modal || startup.active) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -345,12 +356,12 @@ function App() {
         ) &&
         !e.ctrlKey && !e.metaKey && !e.altKey
       ) {
-        setEditor(blankTask());
+        newTask();
       }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [data, editor, modal, startup.active]);
+  }, [data, editor, modal, startup.active, view, projectFilter]);
   async function api(path, method = "GET", body) {
     const res = await fetch(`/api${path}`, {
       method,
@@ -381,6 +392,7 @@ function App() {
     setView(next);
     setSearch("");
     setPriorityFilter("all");
+    setProjectFilter("all");
     setMobileNav(false);
   }
   async function toggle(task) {
@@ -462,6 +474,13 @@ function App() {
   const unread = notifications.filter((n) => !n.read).length,
     scheduled = active.filter((t) => t.automation?.enabled),
     currentProject = projects.find((p) => view === `project:${p.id}`);
+  const projectIds = new Set(projects.map(project => project.id));
+  const selectedProject = currentProject?.id ||
+    (projectFilter === "general" || projectIds.has(projectFilter) ? projectFilter : "all");
+  function selectProject(value) {
+    if (view.startsWith("project:") && value !== currentProject?.id) setView("all");
+    setProjectFilter(value);
+  }
   const navItems = [
     [
       "today",
@@ -486,7 +505,7 @@ function App() {
       all: t("全部任务"),
       completed: t("已完成"),
       automation: t("Codex 调度"),
-    }[view];
+    }[view] || t("全部任务");
   let filtered = tasks.filter((t) => {
     if (view === "completed" && !t.completed) return false;
     if (view !== "completed" && t.completed && !showDone) return false;
@@ -494,7 +513,8 @@ function App() {
       return false;
     if (view === "upcoming" && (!t.dueAt || dateKey(t.dueAt) <= today()))
       return false;
-    if (currentProject && t.projectId !== currentProject.id) return false;
+    if (selectedProject === "general" && projectIds.has(t.projectId)) return false;
+    if (!["all", "general"].includes(selectedProject) && t.projectId !== selectedProject) return false;
     if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
     return `${t.title} ${t.notes}`.toLowerCase().includes(search.toLowerCase());
   });
@@ -541,7 +561,7 @@ function App() {
   const newTask = () =>
     setEditor({
       ...blankTask(),
-      projectId: currentProject?.id || null,
+      projectId: projectIds.has(selectedProject) ? selectedProject : null,
       ...(view === "today"
         ? { dueAt: new Date(new Date().setHours(18, 0, 0, 0)).toISOString() }
         : {}),
@@ -980,6 +1000,21 @@ function App() {
                   </div>
                   </div>
                 </div>
+                <div className={`group-heading task-project-heading ${groups[0]?.label === t("逾期待办") ? "overdue" : ""}`}>
+                  <ChevronDown size={14} aria-hidden="true" />
+                  <h3>{groups[0]?.label || (view === "completed" ? t("已完成") : t("待办任务"))}</h3>
+                  <span>{groups[0]?.tasks.length || 0}</span>
+                  <label className="project-filter-control">
+                    <Folder size={14} aria-hidden="true" />
+                    <select id="task-project-filter" aria-label={t("按项目筛选")}
+                      value={selectedProject} onChange={event => selectProject(event.target.value)}>
+                      <option value="all">{t("全部项目")}</option>
+                      <option value="general">{t("常规")}</option>
+                      {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
+                    </select>
+                    <ChevronDown size={13} aria-hidden="true" />
+                  </label>
+                </div>
                 {!tasks.length ? (
                   <div className="welcome-panel">
                     <div className="welcome-art">
@@ -1020,15 +1055,15 @@ function App() {
                   </div>
                 ) : (
                   <TaskMotionArea ids={groups.flatMap(group => group.tasks.map(task => task.id))} enabled={glassSettings.motion}>
-                  {groups.map((group) => (
+                  {groups.map((group, index) => (
                     <section className="task-group" key={group.label}>
-                      <div
+                      {index > 0 && <div
                         className={`group-heading ${group.label === t("逾期待办") ? "overdue" : ""}`}
                       >
                         <ChevronDown size={14} />
                         <h3>{group.label}</h3>
                         <span>{group.tasks.length}</span>
-                      </div>
+                      </div>}
                       {group.tasks.map((task) => (
                         <TaskRow
                           key={task.id}
@@ -1562,12 +1597,10 @@ function TaskRow({ task, project, onToggle, onEdit, onDelete, rainIntensity = 0,
           )}
         </span>
         <span className="task-meta">
-          {project && (
-            <span>
-              <i style={{ background: project.color }} />
-              {project.name}
-            </span>
-          )}
+          <span className="task-project-label">
+            <i style={{ background: project?.color || "var(--muted)" }} />
+            {project?.name || t("常规")}
+          </span>
           {task.notes && <FileText size={11} />}
           <span className={overdue ? "overdue" : ""}>
             {task.dueAt && (
@@ -1682,7 +1715,7 @@ function TaskEditor({ task, projects, onClose, onSave, onDelete }) {
                 value={form.projectId || ""}
                 onChange={(e) => change("projectId", e.target.value || null)}
               >
-                <option value="">{t("无项目")}</option>
+                <option value="">{t("常规")}</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}

@@ -1,89 +1,59 @@
-# Daylight 产品演示
+# Daylight product demo
 
-[在线产品演示](https://key07211.github.io/daylight/demo.html) · [打开离线导览](demo.html) · [使用指南](USER_GUIDE.md) · [Codex 接入](MCP_GUIDE.md)
+**English** · [简体中文](DEMO.zh-CN.md)
 
-下载演示压缩包后解压，打开其中的 `docs/demo.html`。也可以下载本仓库的 `docs` 文件夹，保留 `media` 子目录，使用 Edge、Chrome 或 Firefox 打开 `demo.html`。页面和所有素材均在本地，无需启动 Daylight、安装依赖或连接网络。
+[Open demo](https://key07211.github.io/daylight/demo.html?lang=en) · [Download offline demo](https://github.com/Key07211/daylight/releases/latest) · [App setup](../README.md#get-started) · [Codex setup](../README.md#connect-with-codex)
 
-演示默认使用英文，包含英文界面、示例任务与开场动画；右上角可切换中文。也可直接打开[英文版](https://key07211.github.io/daylight/demo.html?lang=en)或[中文版](https://key07211.github.io/daylight/demo.html?lang=zh)。页面以画面为主，每章保留一句说明。
+## Explore
 
-这是一份产品导览，不是任务客户端。点击章节、切换画面、中英文切换、放大截图与播放开场，只影响演示页面。它不会添加任务、发送提醒、修改应用配置或调用 Codex。
+The walkthrough shows tasks, reminders, liquid glass, day/night weather, desktop controls, Codex workflows, and opening animations. Use the chapter buttons to explore at your own pace, or start the guided tour.
 
-## 演示内容
+- Day, night, and rain scenes play actual app recordings automatically. Opening scenes also play when selected.
+- Use **Pause motion** for a still preview and **Play motion** to resume. System reduced-motion preferences start the page with still previews; you can choose to play.
+- Switch **English / 中文** to change the page text, app captures, and sample task language.
+- Select an image to enlarge it; close with the close button or Escape.
 
-| 章节 | 展示内容 |
-| --- | --- |
-| 任务与提醒 | 项目、优先级、到期与提醒时间、编辑窗口、完成确认 |
-| 光线与天气 | 日光、夜晚、雨天，以及玻璃通透度、模糊、高光和动效设置 |
-| 桌面里的细节 | 英文界面、原生窗口置顶；用户输入内容保持原文 |
-| 与 Codex 协作 | MCP 对话管理任务与 CLI 工作调度的区别 |
-| 每一天的开场 | 实际应用录制的晨光、月光和雨窗动画，可手动播放或停止 |
-| 安心留在本地 | 本地保存、备份，以及提醒和调度的运行条件 |
+The demo has no audio. Its language, navigation, and playback controls affect only this page. It does not edit tasks, send reminders, change MCP settings, or run Codex.
 
-导览提供约 45 秒的自动翻页，也可逐章阅读。页面支持窄屏、键盘操作和系统减少动态效果设置。开场动画不会自动播放，没有声音。
+## View offline
 
-## 画面来源与边界
+Extract `Daylight-Demo-0.3.0.zip` and open `docs/demo.html` in Edge, Chrome, or Firefox. Keep the accompanying files and `media` folder together. No app installation, local server, dependencies, or internet connection is needed.
 
-所有应用截图均由当前应用代码在一个全新的隔离资料目录中拍摄。六条任务、项目名称、日期、天气和城市均为公开演示准备的固定样例，不含真实用户任务、邮箱、课程资料或个人配置路径。界面中的“演示城市”与温度是拍摄用的天气样例，不代表实时天气。
+You can also download the repository and open its `docs/demo.html` directly. English is the default; the language switch works offline.
 
-任务编辑和完成确认对话框是真实界面。拍摄时取消了完成操作；示例任务未被标记为完成。两套截图分别使用中英文界面和对应语言的示例任务，置顶状态通过真实窗口控制验证。正式应用的语言切换不会翻译已有任务内容。
+## What the recordings show
 
-Codex 截图刻意保留未连接状态。调度草稿保持暂停，工作目录未设置，执行历史为空。没有配置真实 MCP、发送 Codex 指令或伪造工具数量、执行结果。
+All captures come from the actual app running with a fresh, isolated profile. Tasks, projects, dates, cities, and weather are fixed public examples. Weather in the demo is not a live forecast. Chinese assets are in `media/`; matching English assets are in `media/en/`.
 
-实际使用时：
+The task editor and completion dialog are real interfaces. Codex remains disconnected in the captures, and its schedule is a paused draft without execution history. No real MCP connection or AI job was created for the demonstration. Opening recordings contain only the introductory scene.
 
-- 任务、提醒和运行记录保存在本机，可导出备份。
-- 天气查询需要网络；没有可用天气时，应用会呈现不可用或缓存状态。
-- MCP 让已连接的 Codex 读取和管理这份任务清单。
-- 定时调度通过本机 Codex CLI 在选定目录中执行工作；需要 CLI 已登录，应用运行、电脑唤醒，并使用 Codex 额度。
-- Windows 通知还受系统通知与勿扰设置影响。
+In the installed app, tasks stay on the computer. Weather needs network access. Codex features need the local CLI and sign-in; scheduled execution also needs internet access and uses the Codex account allowance. Reminders and scheduled runs need the app running and the computer awake. Changing the app language does not translate your existing task text.
 
-## 媒体文件
+## Refresh and check the demo
 
-![Daylight 示例任务界面](media/tasks-day.webp)
-
-| 文件 | 内容 |
-| --- | --- |
-| `media/tasks-day.webp` | 日光任务列表 |
-| `media/task-editor.webp` | 编辑任务与提醒时间 |
-| `media/complete-confirm.webp` | 完成确认 |
-| `media/glass-settings.webp` | 玻璃参数设置 |
-| `media/tasks-english.webp` | 英文界面与置顶状态 |
-| `media/tasks-night.webp` | 夜晚任务列表 |
-| `media/tasks-rain.webp` | 雨天任务列表 |
-| `media/codex-workflow.webp` | 未连接的 Codex 状态与暂停草稿 |
-| `media/opening-day.webp` | 晨光开场动画 |
-| `media/opening-night.webp` | 月光开场动画 |
-| `media/opening-rain.webp` | 雨窗开场动画 |
-| `media/opening-*-still.webp` | 对应动画的静止预览图 |
-
-动画素材只保留开场部分，不包含开场后的任务画面。使用 WebP 便于压缩包与 GitHub 页面直接离线播放，无需视频解码工具。
-
-上表的 14 份中文素材位于 `media/`，对应的 14 份英文素材位于 `media/en/`，文件名一致。切换语言时会同时切换演示文案和素材。
-
-## 为维护者重新拍摄
-
-在仓库根目录运行：
+From the repository root:
 
 ```powershell
-npm install
+npm ci
 npm run build
 .\node_modules\.bin\electron.cmd desktop/product-demo.cjs
 .\node_modules\.bin\electron.cmd desktop/product-demo.cjs --english
-.\node_modules\.bin\electron.cmd desktop/product-demo.cjs --verify-docs
 ```
 
-捕获工具只使用临时新建的 `.runtime/product-demo-*` 资料目录和随机本地端口。禁止外部网络请求，禁用调度器与 MCP 系统配置操作。输出为 `docs/media`；验证结果保存在不随发布分发的 `.runtime` 中。
+To refresh only the looping app recordings:
 
-请在重新拍摄后检查每张素材、移动端布局和英文导览，再发布。不要用真实资料目录或个人任务截图替换示例素材。
+```powershell
+.\node_modules\.bin\electron.cmd desktop/product-demo.cjs --motion-only
+.\node_modules\.bin\electron.cmd desktop/product-demo.cjs --motion-only --english
+```
 
----
+Check the walkthrough and visible motion:
 
-## English
+```powershell
+.\node_modules\.bin\electron.cmd desktop/product-demo.cjs --verify-docs
+.\node_modules\.bin\electron.cmd desktop/demo-motion-smoke.cjs
+```
 
-Open `docs/demo.html` after extracting the demo archive. Keep its adjacent `media` folder. The walkthrough defaults to English, including app captures, sample tasks, and opening animations. Chinese is available in the language switch. You can also use the [English online tour](https://key07211.github.io/daylight/demo.html?lang=en).
+Capture uses a temporary `.runtime/product-demo-*` profile and a random local port. External requests, scheduling, and system MCP registration are disabled. Outputs go to `docs/media`; runtime reports stay in `.runtime` and are not distributed. Motion verification compares rendered scene pixels over time.
 
-The page is a product demonstration, not a task client. Its controls select actual app captures and explanations. They do not edit tasks, send notifications, configure MCP or execute Codex.
-
-All captures use a fresh, isolated profile with synthetic tasks and fixed weather/time examples. No personal tasks, email addresses, course materials or user configuration paths are included. The Codex capture remains disconnected, with a paused draft and no execution history. Opening recordings contain the introductory scene only.
-
-For the real application, tasks are stored locally. Weather requires networking. Codex features require the local CLI and sign-in. Reminders and scheduled runs require the application to remain running and the computer to remain awake. See the [user guide](USER_GUIDE.md) and [Codex guide](MCP_GUIDE.md) for setup.
+Review both languages, all scenes, pause/play, reduced-motion behavior, keyboard controls, and narrow layouts before publishing. Use synthetic profiles for new captures.

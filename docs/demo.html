@@ -19,6 +19,8 @@ dialog{border:1px solid var(--line);padding:8px;border-radius:18px;width:min(96v
 @media(max-width:700px){.shell{padding:0 16px}.topbar{padding:18px 0;gap:12px}.top-right{gap:8px}.wordmark{font-size:18px;gap:8px}.brand-icon{width:29px;height:29px}.language button{padding:4px 8px;font-size:11px}.tour-button{padding:7px 10px;font-size:11px;gap:6px}.workbench{display:block;padding-top:19px}.chapters{position:static;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:20px;padding:0}.chapter{font-size:11px;padding:10px 7px;gap:6px;white-space:nowrap}.viewer-top h1{font-size:22px}.shot-controls button{font-size:10px;padding:4px 9px}.screen{border-radius:11px;padding:3px}.screen-image-button{border-radius:8px}.scene-copy{gap:12px;padding-top:13px}.scene-copy p{font-size:12px}.scene-copy button{font-size:10px}.flow-grid{grid-template-columns:1fr}.closing{align-items:flex-start;flex-direction:column;gap:10px;padding:18px 0;margin-top:10px}.closing-links{gap:18px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
 @media(forced-colors:active){.screen,.chapter,.flow-card,.tour-button{border:1px solid CanvasText}.brand-icon{box-shadow:none}.chapter[aria-current=step]{outline:1px solid Highlight}}
+.preview-actions{display:flex;align-items:center;gap:16px;flex-shrink:0}.scene-copy #motion-toggle{border:1px solid var(--line);border-radius:99px;padding:5px 11px;background:var(--glass);color:var(--ink);text-decoration:none}.scene-copy #motion-toggle:hover{background:var(--wash)}
+@media(max-width:700px){.scene-copy{align-items:flex-start;flex-direction:column;gap:10px}.preview-actions{width:100%;justify-content:space-between}}
 </style>
 </head>
 <body>
@@ -39,7 +41,7 @@ dialog{border:1px solid var(--line);padding:8px;border-radius:18px;width:min(96v
   <section class="viewer" aria-label="Product preview">
     <div class="viewer-top"><h1 id="scene-title">Tasks & reminders</h1><div class="shot-controls" id="shot-controls" role="group" aria-label="Choose view"></div></div>
     <div class="screen"><button class="screen-image-button" id="zoom-image" aria-label="View larger"><img id="scene-image" src="media/en/tasks-day.webp" alt="Daylight sample tasks" width="1440" height="960" decoding="async"></button></div>
-    <div class="scene-copy" id="scene-copy"><p id="scene-description"></p><button id="zoom-link" data-i18n="zoom">View larger ↗</button></div>
+    <div class="scene-copy" id="scene-copy"><p id="scene-description"></p><div class="preview-actions"><button id="motion-toggle" aria-pressed="true">Pause motion</button><button id="zoom-link" data-i18n="zoom">View larger ↗</button></div></div>
     <div class="special-panel" id="special-panel" hidden></div>
     <div class="chapter-bottom"><button id="previous" data-i18n="previous">← Previous</button><span id="chapter-count">01 / 06</span><button id="next" data-i18n="next">Next →</button></div>
   </section>
@@ -51,20 +53,18 @@ dialog{border:1px solid var(--line);padding:8px;border-radius:18px;width:min(96v
 <script>
 (() => {
 'use strict';
-if (location.protocol === 'https:' || location.protocol === 'http:') {
-  document.querySelectorAll('.closing-links a').forEach(link => {
-    link.href = 'https://github.com/Key07211/daylight/blob/main/docs/' + link.getAttribute('href');
-  });
-}
 const strings = {
   tourStart: ['播放导览', 'Play tour'], tourPause: ['暂停导览', 'Pause tour'],
   chapterTasks: ['任务', 'Tasks'], chapterAtmosphere: ['主题', 'Themes'],
   chapterDesktop: ['桌面', 'Desktop'], chapterCodex: ['Codex', 'Codex'],
   chapterOpening: ['开场', 'Opening'], chapterLocal: ['本地数据', 'Local data'],
-  demoNote: ['示例预览，不会修改任务。', 'Sample preview. No tasks are changed.'],
+  demoNote: ['真实应用录制 · 示例数据', 'Recorded in Daylight · Sample data'],
   zoom: ['放大查看 ↗', 'View larger ↗'], previous: ['← 上一章', '← Previous'], next: ['下一章 →', 'Next →'],
   close: ['关闭', 'Close'], userGuide: ['使用手册 ↗', 'User guide ↗'], mcpGuide: ['Codex 接入 ↗', 'Codex setup ↗'],
   play: ['播放开场', 'Play opening'], stop: ['停止播放', 'Stop playback'],
+  motionPlay: ['播放动效', 'Play motion'], motionPause: ['暂停动效', 'Pause motion'],
+  languageLabel: ['语言', 'Language'], chaptersLabel: ['产品章节', 'Product chapters'],
+  previewLabel: ['产品预览', 'Product preview'], viewsLabel: ['选择画面', 'Choose view'],
   mcpTitle: ['管理任务 · MCP', 'Manage tasks · MCP'],
   mcpBody: ['在 Codex 对话中查看、添加和修改清单。', 'Review, add, and update tasks from a Codex conversation.'],
   scheduleTitle: ['定时执行 · Codex CLI', 'Schedule work · Codex CLI'],
@@ -72,28 +72,30 @@ const strings = {
   codexNote: ['示例连接未启用，调度已暂停。', 'Disconnected example. Schedule paused.']
 };
 const shots = {
-  'tasks-day': { label: ['日光', 'Daylight'], alt: ['日光界面与示例任务', 'Daylight interface with sample tasks'] },
+  'tasks-day': { label: ['日光', 'Daylight'], alt: ['日光界面与示例任务', 'Daylight interface with sample tasks'], motion: true },
   'task-editor': { label: ['编辑与提醒', 'Edit & remind'], alt: ['任务编辑与提醒时间', 'Task editor and reminder time'] },
+  'project-filter': { label: ['项目筛选', 'Projects'], alt: ['按常规项目筛选未分配项目的任务', 'General filter showing tasks without a project'] },
   'complete-confirm': { label: ['完成确认', 'Confirmation'], alt: ['任务完成确认', 'Task completion confirmation'] },
-  'tasks-night': { label: ['夜晚', 'Night'], alt: ['月光与星星的夜晚界面', 'Night interface with moonlight and stars'], night: true },
-  'tasks-rain': { label: ['雨天', 'Rain'], alt: ['雨天的液态玻璃界面', 'Rain on the liquid-glass interface'] },
+  'tasks-night': { label: ['夜晚', 'Night'], alt: ['月光与星星的夜晚界面', 'Night interface with moonlight and stars'], night: true, motion: true },
+  'tasks-rain': { label: ['雨天', 'Rain'], alt: ['雨天的液态玻璃界面', 'Rain on the liquid-glass interface'], motion: true },
   'glass-settings': { label: ['玻璃设置', 'Glass controls'], alt: ['液态玻璃参数设置', 'Liquid-glass settings'] },
-  'tasks-english': { label: ['English · 置顶', 'Pinned window'], alt: ['英文界面与窗口置顶', 'English interface with the window pinned'] },
+  'tasks-english': { label: ['English · 置顶', 'Pinned window'], alt: ['英文界面与窗口置顶', 'English interface with the window pinned'], motion: true },
   'codex-workflow': { label: ['调度', 'Scheduling'], alt: ['未连接的 Codex 与暂停的调度', 'Disconnected Codex with a paused schedule'] },
   'opening-day': { label: ['晨光', 'Morning'], alt: ['太阳与向日葵开场', 'Sun and sunflower opening'], movie: true },
   'opening-night': { label: ['月光', 'Moonlight'], alt: ['月亮与悬星开场', 'Moonlight and hanging stars opening'], movie: true, night: true },
   'opening-rain': { label: ['雨窗', 'Rain window'], alt: ['雨窗与微光开场', 'Rain-window opening'], movie: true }
 };
 const chapters = [
-  { id: 'tasks', title: ['任务与提醒', 'Tasks & reminders'], body: ['整理任务、设置提醒，完成前再确认。', 'Organize tasks, set reminders, and confirm completion.'], shots: ['tasks-day', 'task-editor', 'complete-confirm'] },
+  { id: 'tasks', title: ['任务与提醒', 'Tasks & reminders'], body: ['按项目筛选、设置提醒，完成前再确认。', 'Filter by project, set reminders, and confirm completion.'], shots: ['tasks-day', 'task-editor', 'project-filter', 'complete-confirm'] },
   { id: 'atmosphere', title: ['日夜与天气', 'Day, night & weather'], body: ['日夜随系统时间切换，玻璃随天气变化。', 'Themes follow your system clock; glass responds to the weather.'], shots: ['tasks-day', 'tasks-night', 'tasks-rain', 'glass-settings'] },
   { id: 'desktop', title: ['桌面功能', 'Desktop essentials'], body: ['窗口置顶、中英文切换与托盘运行。', 'Pin the window, switch languages, or keep it in the tray.'], shots: ['tasks-english', 'tasks-day'] },
   { id: 'codex', title: ['与 Codex 协作', 'Work with Codex'], body: ['对话管理清单，也能定时执行工作。', 'Manage your list in chat, or schedule work.'], shots: ['codex-workflow'], special: 'codex' },
-  { id: 'opening', title: ['开场动画', 'Opening moments'], body: ['晨光、月光与雨窗，随时可以跳过。', 'Sunlight, moonlight, or rain. Always skippable.'], shots: ['opening-day', 'opening-night', 'opening-rain'], special: 'opening' },
+  { id: 'opening', title: ['开场动画', 'Opening moments'], body: ['晨光、月光与雨窗。', 'Sunlight, moonlight, or rain.'], shots: ['opening-day', 'opening-night', 'opening-rain'] },
   { id: 'local', title: ['本地保存', 'Stored locally'], body: ['任务留在本机，可随时导出备份。', 'Keep tasks on your computer and export a backup.'], shots: ['tasks-day'] }
 ];
 let lang = new URLSearchParams(location.search).get('lang') === 'zh' ? 'zh' : 'en';
-let chapter = 0, shot = 'tasks-day', playing = false, tour = null, previousFocus = null;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let chapter = 0, shot = 'tasks-day', playing = !reducedMotion.matches, tour = null, previousFocus = null;
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const tr = value => Array.isArray(value) ? value[lang === 'en' ? 1 : 0] : value;
@@ -106,12 +108,43 @@ function localize() {
   $$('[data-lang]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.lang === lang)));
   $('#auto-tour [data-i18n="tourStart"]').textContent = t(tour ? 'tourPause' : 'tourStart');
   $('#zoom-image').setAttribute('aria-label', t('zoom'));
+  $('.language').setAttribute('aria-label', t('languageLabel'));
+  $('.chapters').setAttribute('aria-label', t('chaptersLabel'));
+  $('.viewer').setAttribute('aria-label', t('previewLabel'));
+  $('#shot-controls').setAttribute('aria-label', t('viewsLabel'));
+  $('#zoom-dialog').setAttribute('aria-label', t('previewLabel'));
+  document.querySelector('meta[name="description"]').content = lang === 'en'
+    ? 'Explore Daylight: tasks, living themes, and Codex on Windows.'
+    : '探索 Daylight：Windows 本地任务、动态主题与 Codex。';
+  const online = /^https?:$/.test(location.protocol);
+  const guide = lang === 'en' ? '../README.md#get-started' : 'USER_GUIDE.md';
+  const codex = lang === 'en' ? '../README.md#connect-with-codex' : 'MCP_GUIDE.md';
+  for (const [key, path] of [['userGuide', guide], ['mcpGuide', codex]]) {
+    $(`a[data-i18n="${key}"]`).href = online
+      ? new URL(path, 'https://github.com/Key07211/daylight/blob/main/docs/').href : path;
+  }
 }
 function show(index, nextShot, announce = true) {
   chapter = Math.max(0, Math.min(chapters.length - 1, index));
   const current = chapters[chapter];
   shot = nextShot && current.shots.includes(nextShot) ? nextShot : current.shots[0];
-  playing = false; render(announce);
+  render(announce);
+}
+function updateMedia() {
+  const capture = shots[shot];
+  const active = playing && !document.hidden;
+  const suffix = capture.movie ? (active ? '' : '-still') : (capture.motion && active ? '-motion' : '');
+  const source = `media/${lang === 'en' ? 'en/' : ''}${shot}${suffix}.webp`;
+  const preview = $('#scene-image');
+  if (preview.getAttribute('src') !== source) preview.setAttribute('src', source);
+  preview.alt = tr(capture.alt);
+  $('#motion-toggle').hidden = !(capture.movie || capture.motion);
+  $('#motion-toggle').textContent = t(playing ? 'motionPause' : 'motionPlay');
+  $('#motion-toggle').setAttribute('aria-pressed', String(playing));
+  if ($('#zoom-dialog').open) {
+    $('#zoom-content').src = preview.src;
+    $('#zoom-content').alt = preview.alt;
+  }
 }
 function render(announce = true) {
   localize();
@@ -123,8 +156,7 @@ function render(announce = true) {
   });
   $('#scene-title').textContent = tr(current.title);
   $('#scene-description').textContent = tr(current.body);
-  $('#scene-image').src = `media/${lang === 'en' ? 'en/' : ''}${shot}${capture.movie && !playing ? '-still' : ''}.webp`;
-  $('#scene-image').alt = tr(capture.alt);
+  updateMedia();
   $('#chapter-count').textContent = String(chapter + 1).padStart(2, '0') + ' / 06';
   $('#previous').disabled = chapter === 0; $('#next').disabled = chapter === 5;
   $('#shot-controls').replaceChildren(...current.shots.map(id => {
@@ -138,12 +170,6 @@ function render(announce = true) {
 }
 function renderSpecial(kind) {
   const panel = $('#special-panel'); panel.replaceChildren(); panel.hidden = !kind;
-  if (kind === 'opening') {
-    const box = element('div', null, 'opening-controls'), button = element('button', t(playing ? 'stop' : 'play'));
-    button.id = 'play-opening'; button.setAttribute('aria-pressed', String(playing));
-    button.addEventListener('click', () => { stopTour(); playing = !playing; render(false); });
-    box.append(button); panel.append(box);
-  }
   if (kind === 'codex') {
     const grid = element('div', null, 'flow-grid');
     for (const mode of ['mcp', 'schedule']) {
@@ -160,7 +186,7 @@ function zoom() {
   $('#zoom-title').textContent = tr(shots[shot].label); $('#zoom-dialog').showModal(); $('#close-zoom').focus();
 }
 $$('[data-lang]').forEach(button => button.addEventListener('click', () => {
-  lang = button.dataset.lang; playing = false;
+  lang = button.dataset.lang;
   if (/^https?:$/.test(location.protocol)) {
     const url = new URL(location.href); url.searchParams.set('lang', lang); history.replaceState(null, '', url);
   }
@@ -170,15 +196,22 @@ $$('[data-chapter]').forEach(button => button.addEventListener('click', () => { 
 $('#previous').addEventListener('click', () => { stopTour(); show(chapter - 1); });
 $('#next').addEventListener('click', () => { stopTour(); show(chapter + 1); });
 $('#zoom-image').addEventListener('click', zoom); $('#zoom-link').addEventListener('click', zoom);
+$('#motion-toggle').addEventListener('click', () => { playing = !playing; updateMedia(); });
 $('#close-zoom').addEventListener('click', () => $('#zoom-dialog').close());
 $('#zoom-dialog').addEventListener('close', () => previousFocus?.focus());
 $('#zoom-dialog').addEventListener('click', event => { if (event.target === $('#zoom-dialog')) $('#zoom-dialog').close(); });
 $('#auto-tour').addEventListener('click', () => {
   if (tour) return stopTour(); show(0); $('#walkthrough').scrollIntoView({ block: 'start' });
-  tour = setInterval(() => { if (chapter === 5) return stopTour(); show(chapter + 1); }, 7500);
+  tour = setInterval(() => {
+    const current = chapters[chapter], nextShot = current.shots.indexOf(shot) + 1;
+    if (nextShot < current.shots.length) return show(chapter, current.shots[nextShot]);
+    if (chapter === chapters.length - 1) return stopTour();
+    show(chapter + 1);
+  }, 6000);
   $('#auto-tour').setAttribute('aria-pressed', 'true'); localize();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden) stopTour(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopTour(); updateMedia(); });
+reducedMotion.addEventListener('change', () => { playing = !reducedMotion.matches; updateMedia(); });
 render(false);
 })();
 </script>
