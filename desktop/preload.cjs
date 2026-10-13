@@ -7,6 +7,15 @@ contextBridge.exposeInMainWorld('daylightDesktop', Object.freeze({
   setAlwaysOnTop: enabled => ipcRenderer.invoke('daylight:set-always-on-top', enabled),
   setAutoLaunch: enabled => ipcRenderer.invoke('daylight:set-auto-launch', enabled),
   openDataFolder: () => ipcRenderer.invoke('daylight:open-data-folder'),
+  getNotificationStatus: () => ipcRenderer.invoke('daylight:notification-status'),
+  testNotification: language => ipcRenderer.invoke('daylight:test-notification', language),
+  openNotificationSettings: () => ipcRenderer.invoke('daylight:notification-settings'),
+  onNotificationStatus: callback => {
+    if (typeof callback !== 'function') throw new TypeError('A status callback is required.');
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('daylight:notification-status-changed', listener);
+    return () => ipcRenderer.removeListener('daylight:notification-status-changed', listener);
+  },
   installMcp: () => ipcRenderer.invoke('daylight:install-mcp'),
   getMcpStatus: () => ipcRenderer.invoke('daylight:mcp-status'),
   checkMcp: () => ipcRenderer.invoke('daylight:check-mcp'),

@@ -4,7 +4,7 @@
 
 一份随时间与天气变化的 Windows 桌面清单。用液态玻璃、向日葵、月光与雨窗陪伴日常工作，也能让本机 Codex 管理任务。
 
-**Windows x64 · v0.4.0 · 中文 / English · 本地保存**
+**Windows x64 · v0.4.1 · 中文 / English · 本地保存**
 
 [下载](https://github.com/Key07211/daylight/releases/latest) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md)
 
@@ -25,7 +25,7 @@
 | 功能 | 行为 |
 | --- | --- |
 | 任务与项目 | 新建、编辑、搜索、按项目筛选（含“常规”）、优先级、截止时间；完成和删除前确认 |
-| 提醒 | 独立设置提醒时间，通知中心与可选 Windows 通知；关闭窗口后继续托盘运行 |
+| 提醒 | Windows 通知开关、系统状态、测试通知与系统设置入口；关闭窗口后继续托盘提醒 |
 | 日光与夜晚 | 按电脑时间 07:00 切入日光、19:00 切入夜晚；手动选择保留至下个切换点或完全退出 |
 | 天气与开场 | 按城市天气呈现云雨雪；太阳沿轨迹移至当前时间，夜间月亮渐亮、悬星落下 |
 | 液态玻璃 | 可调通透度、模糊、高光；雨珠滑落并汇入玻璃底边，向日葵随雨轻颤 |
@@ -76,6 +76,8 @@ npm run desktop
 ```
 
 `npm run desktop` 使用正式桌面数据目录。仅想体验示例时运行 `npm run desktop:preview`，它使用独立数据，并停用提醒、自动执行及 MCP 登记。
+
+Windows 原生通知在打包后的应用中启用。源码预览不会把 Electron 登记为正式 Daylight 的通知程序；请在安装版的「设置与连接 → 桌面提醒」中发送测试通知。
 
 开发前端可在两个终端分别运行 `npm start` 和 `npm run dev`。`Start-Daylight.cmd` / `Stop-Daylight.cmd` 提供源码网页服务的启动与停止，桌面安装版无需这些脚本。服务默认监听 `127.0.0.1:4317`，避免与正式应用同时占用端口。
 

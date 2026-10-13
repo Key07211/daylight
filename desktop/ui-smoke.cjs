@@ -300,6 +300,15 @@ module.exports = async function testInterface(window, origin, output) {
     window.setContentSize(1360, 900);
     await click('.workspace');
     await waitFor("Boolean(document.querySelector('[data-testid=\"glass-settings\"]'))", 'glass settings');
+    await waitFor("Boolean(document.querySelector('.notification-state'))", 'notification settings');
+    if (await evaluate("document.querySelector('.notification-settings [role=switch]').getAttribute('aria-checked') === 'true'")) {
+      await click('.notification-settings [role=switch]');
+      await waitFor("document.querySelector('.notification-state').dataset.state === 'off'", 'notifications disabled');
+    }
+    await click('.notification-settings [role=switch]');
+    await waitFor("document.querySelector('.notification-state').dataset.state === 'disabled'", 'notification smoke state');
+    checks.notificationPreferencePersists = (await bootstrap()).settings.desktopNotifications === true;
+    checks.notificationSmokeIsHonest = await evaluate("document.querySelector('.notification-state').textContent.includes('预览中不发送通知') && document.querySelector('[data-action=test-notification]').disabled && !document.querySelector('[data-action=notification-settings]')");
     checks.mcpSmokeCannotChangeRealConfig = await evaluate("Boolean(document.querySelector('[data-testid=\"mcp-connection\"] button:disabled')) && document.querySelector('[data-testid=\"mcp-connection\"]').dataset.state === 'unavailable'");
     checks.mcpAutoConnectRejectsInvalidInput = await evaluate(`(async () => {
       try { await window.daylightDesktop.setMcpAutoConnect('yes'); return false; } catch { return true; }
@@ -345,12 +354,14 @@ module.exports = async function testInterface(window, origin, output) {
     checks.glassPreferencesPersist = await evaluate("document.documentElement.style.getPropertyValue('--glass-blur') === '20px' && document.documentElement.dataset.glassMotion === 'off' && document.querySelector('.liquid-ribbon')?.dataset.motion === 'still'");
     await click('.workspace');
     await waitFor("Boolean(document.querySelector('.glass-reset'))", 'reset settings');
+    checks.notificationPreferenceSurvivesReload = await evaluate("document.querySelector('.notification-settings [role=switch]').getAttribute('aria-checked') === 'true'");
     await click('.glass-reset');
     await waitFor("document.documentElement.dataset.glassMotion === 'on'", 'glass reset');
     checks.glassResetWorks = await evaluate("JSON.stringify(JSON.parse(localStorage.getItem('daylight-glass'))) === JSON.stringify({transparency:58,blur:12,glow:55,motion:true})");
     await click('[role="dialog"] [data-language="en"]');
     await waitFor("document.documentElement.lang === 'en' || document.documentElement.lang === 'en-US'", 'English selected');
     checks.englishSettings = await evaluate("document.querySelector('[role=\"dialog\"]').textContent.includes('Liquid glass') && document.querySelector('[role=\"dialog\"]').textContent.includes('Background blur')");
+    checks.englishNotificationSettings = await evaluate("document.querySelector('.notification-settings').textContent.includes('Send test notification') && document.querySelector('.notification-state').textContent.includes('Disabled in preview')");
     await capture('settings-english');
     await evaluate("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))");
     await waitFor("!document.querySelector('[role=\"dialog\"]')", 'English settings dismissed');
@@ -615,5 +626,6 @@ module.exports = async function testInterface(window, origin, output) {
     return { checks, screenshots };
   } finally {
     for (const id of ids) await request(`/tasks/${id}`, 'DELETE');
+    await request('/settings', 'PATCH', { desktopNotifications: state.settings.desktopNotifications });
   }
 };

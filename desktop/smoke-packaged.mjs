@@ -87,7 +87,7 @@ try {
   const archiveFiles = new Set(asar.listPackage(archive).map(entry => entry.replaceAll('\\', '/').replace(/^\//, '')));
   const requiredFiles = ['package.json', 'dist/index.html', 'desktop/main.cjs', 'desktop/preload.cjs',
     'desktop/ui-smoke.cjs', 'desktop/codex-path.cjs', 'desktop/mcp-controller.cjs', 'desktop/mcp-connection.cjs', 'desktop/mcp-migration.cjs',
-    'desktop/update-controller.cjs', 'desktop/update-service.cjs', 'node_modules/electron-updater/package.json', 'node_modules/electron-updater/out/main.js',
+    'desktop/update-controller.cjs', 'desktop/update-service.cjs', 'desktop/notification-service.cjs', 'node_modules/electron-updater/package.json', 'node_modules/electron-updater/out/main.js',
     'server/app.mjs', 'server/store.mjs', 'server/scheduler.mjs', 'integrations/mcp-server.mjs'];
   for (const entry of requiredFiles) assert.ok(archiveFiles.has(entry), `Missing packaged dependency: ${entry}`);
   const packageInfo = JSON.parse(asar.extractFile(archive, 'package.json').toString('utf8'));

@@ -5,6 +5,7 @@ const { pathToFileURL } = require('node:url');
 const { resolveCodex } = require('./codex-path.cjs');
 const { createDesktopMcp } = require('./mcp-controller.cjs');
 const { createDesktopUpdates } = require('./update-service.cjs');
+const { createDesktopNotifications } = require('./notification-service.cjs');
 
 app.setName('Daylight');
 app.setAppUserModelId('com.daylight.tasks');
@@ -31,10 +32,10 @@ let origin;
 let codexCommand;
 let mcp;
 let updates;
+let desktopNotifications;
 let quitting = false;
 let shutdownStarted = false;
 let startupClaimed = false;
-const notifications = new Set();
 let smokeDetails = {};
 
 function writeSmoke(result) {
@@ -158,16 +159,16 @@ function setupIpc() {
     verifiedSender(event);
     updates.setEditing(value);
   });
+  ipcMain.handle('daylight:notification-status', event => { verifiedSender(event); return desktopNotifications.getStatus(); });
+  ipcMain.handle('daylight:test-notification', (event, language) => {
+    verifiedSender(event);
+    return desktopNotifications.sendTest(language);
+  });
+  ipcMain.handle('daylight:notification-settings', event => { verifiedSender(event); return desktopNotifications.openSettings(); });
 }
 
 function nativeReminder(item) {
-  if (smoke || !Notification.isSupported()) return;
-  const toast = new Notification({ title: item.title.slice(0, 200), body: item.body.slice(0, 500), icon: path.join(__dirname, 'assets', 'icon.png') });
-  notifications.add(toast);
-  toast.on('click', showWindow);
-  toast.on('close', () => notifications.delete(toast));
-  toast.on('failed', () => notifications.delete(toast));
-  toast.show();
+  void desktopNotifications?.send(item).catch(console.error);
 }
 
 async function createWindow() {
@@ -260,17 +261,27 @@ async function runSmoke() {
       noUpdateWork: checked.state === 'disabled' && downloaded.state === 'disabled',
       invalidEditingRejected };
   })()`);
+  const notificationSafety = await window.webContents.executeJavaScript(`(async () => {
+    const status = await window.daylightDesktop.getNotificationStatus();
+    const sent = await window.daylightDesktop.testNotification('en');
+    const settings = await window.daylightDesktop.openNotificationSettings();
+    let invalidLanguageRejected = false;
+    try { await window.daylightDesktop.testNotification({title:'untrusted'}); } catch { invalidLanguageRejected = true; }
+    return { disabledInSmoke: status.state === 'disabled', noToastSent: sent.lastDelivery.state === 'none',
+      noSettingsOpened: !settings.opened, invalidLanguageRejected };
+  })()`);
   const interfaceChecks = await require('./ui-smoke.cjs')(window, origin, smokeOutput);
   const ok = response.ok && Array.isArray(state.tasks) && Boolean(state.csrfToken)
     && renderer.nodeUnavailable && rendererLoaded && Boolean(renderer.info.dataPath)
     && renderer.pinButtonAvailable && renderer.cornerNotesRemoved
-    && Object.values(pinning).every(Boolean) && Object.values(updateSafety).every(Boolean) && Object.values(interfaceChecks.checks).every(Boolean);
+    && Object.values(pinning).every(Boolean) && Object.values(updateSafety).every(Boolean)
+    && Object.values(notificationSafety).every(Boolean) && Object.values(interfaceChecks.checks).every(Boolean);
   const screenshotPath = smokeOutput.replace(/\.json$/i, '') + '.png';
   fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
   fs.writeFileSync(screenshotPath, (await window.webContents.capturePage()).toPNG());
   writeSmoke({ ok, origin, apiAvailable: response.ok, rendererLoaded,
     title: renderer.title, renderedText: renderer.content.slice(0, 2000), nativeInfo: renderer.info, nodeUnavailable: renderer.nodeUnavailable,
-    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, interfaceChecks, updateSafety,
+    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, interfaceChecks, updateSafety, notificationSafety,
     pinButtonAvailable: renderer.pinButtonAvailable, cornerNotesRemoved: renderer.cornerNotesRemoved, screenshotPath,
     windowSecurity: window.webContents.getLastWebPreferences(), trayAvailable: Boolean(tray),
     notificationsEnabled: state.settings.desktopNotifications, packaged: app.isPackaged });
@@ -284,6 +295,13 @@ async function boot() {
   const { detectCodex } = await import(pathToFileURL(path.join(app.getAppPath(), 'server', 'scheduler.mjs')).href);
   const codex = await resolveCodex(detectCodex);
   codexCommand = codex.command;
+  // Electron registers the current executable when checking native support.
+  // A source preview must not replace the installed app's Windows shortcut.
+  desktopNotifications = createDesktopNotifications({ app, Notification, shell, smoke, allowNative: app.isPackaged,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+    getEnabled: () => service?.store.data.settings.desktopNotifications === true,
+    onActivate: showWindow,
+    onStatusChange: status => { if (window && !window.isDestroyed()) window.webContents.send('daylight:notification-status-changed', status); } });
   service = await createApp({ dataDir, distDir: path.join(app.getAppPath(), 'dist'),
     codexCommand: codex.command, codexInfo: codex.info, notify: nativeReminder,
     allowedOrigins: [], startScheduler: !smoke });
@@ -324,7 +342,7 @@ app.on('before-quit', event => {
   const hadRun = Boolean(service?.scheduler.activeRun);
   Promise.resolve(service?.close()).catch(console.error).finally(async () => {
     if (hadRun) await new Promise(resolve => setTimeout(resolve, 1000));
-    notifications.forEach(item => item.close());
+    desktopNotifications?.dispose();
     tray?.destroy();
     quitting = true;
     app.quit();

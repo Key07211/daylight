@@ -1,5 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppUpdate, UpdateIndicator, UpdateSettings } from './UpdateControl.jsx';
+import ProjectFilter from './ProjectFilter.jsx';
+import NotificationSettings from './NotificationSettings.jsx';
 import { createRoot } from "react-dom/client";
 import {
   Sun,
@@ -351,7 +353,8 @@ function App() {
   }, [data, view, projectFilter]);
   useEffect(() => {
     const key = (e) => {
-      if (!data || editor || modal || startup.active) return;
+      if (!data || editor || modal || startup.active || e.defaultPrevented ||
+          e.target.closest?.('[role="combobox"], [role="listbox"]')) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         searchRef.current?.focus();
@@ -513,18 +516,24 @@ function App() {
       completed: t("已完成"),
       automation: t("Codex 调度"),
     }[view] || t("全部任务");
-  let filtered = tasks.filter((t) => {
+  const scopedTasks = tasks.filter((t) => {
     if (view === "completed" && !t.completed) return false;
     if (view !== "completed" && t.completed && !showDone) return false;
     if (view === "today" && (!t.dueAt || dateKey(t.dueAt) > today()))
       return false;
     if (view === "upcoming" && (!t.dueAt || dateKey(t.dueAt) <= today()))
       return false;
-    if (selectedProject === "general" && projectIds.has(t.projectId)) return false;
-    if (!["all", "general"].includes(selectedProject) && t.projectId !== selectedProject) return false;
     if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
     return `${t.title} ${t.notes}`.toLowerCase().includes(search.toLowerCase());
   });
+  const projectCounts = { all: scopedTasks.length, general: 0 };
+  for (const project of projects) projectCounts[project.id] = 0;
+  for (const task of scopedTasks) {
+    const key = projectIds.has(task.projectId) ? task.projectId : "general";
+    projectCounts[key] = (projectCounts[key] || 0) + 1;
+  }
+  let filtered = scopedTasks.filter(task => selectedProject === "all" ||
+    (selectedProject === "general" ? !projectIds.has(task.projectId) : task.projectId === selectedProject));
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   filtered.sort(
     (a, b) =>
@@ -740,7 +749,8 @@ function App() {
           {projects.map((p) => (
             <button
               key={p.id}
-              className={`nav-item ${currentProject?.id === p.id ? "active" : ""}`}
+              className={`nav-item project-nav-item ${currentProject?.id === p.id ? "active" : ""}`}
+              style={{ '--project-accent': /^#[\da-f]{6}$/i.test(p.color || '') ? p.color : '#7a8f73' }}
               aria-current={currentProject?.id === p.id ? "page" : undefined}
               onClick={() => navigate(`project:${p.id}`)}
             >
@@ -1012,16 +1022,8 @@ function App() {
                   <ChevronDown size={14} aria-hidden="true" />
                   <h3>{groups[0]?.label || (view === "completed" ? t("已完成") : t("待办任务"))}</h3>
                   <span>{groups[0]?.tasks.length || 0}</span>
-                  <label className="project-filter-control">
-                    <Folder size={14} aria-hidden="true" />
-                    <select id="task-project-filter" aria-label={t("按项目筛选")}
-                      value={selectedProject} onChange={event => selectProject(event.target.value)}>
-                      <option value="all">{t("全部项目")}</option>
-                      <option value="general">{t("常规")}</option>
-                      {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
-                    </select>
-                    <ChevronDown size={13} aria-hidden="true" />
-                  </label>
+                  <ProjectFilter value={selectedProject} projects={projects}
+                    onChange={selectProject} counts={projectCounts} />
                 </div>
                 {!tasks.length ? (
                   <div className="welcome-panel">
@@ -1404,42 +1406,8 @@ function App() {
                 <p className="hint">{t("关闭窗口会收起到系统托盘。右键托盘图标选择「退出」才会停止提醒和调度。")}</p>
               </section>
             )}
-            <section>
-              <h3>
-                <Bell size={17} />{t("桌面提醒")}</h3>
-              <div className="setting-row">
-                <div>
-                  <strong>{t("Windows 桌面通知")}</strong>
-                  <p>{t("到达提醒时间时，在桌面显示通知。")}</p>
-                </div>
-                <button
-                  role="switch"
-                  aria-checked={!!data.settings?.desktopNotifications}
-                  aria-label={t("Windows 桌面通知")}
-                  className={`switch ${data.settings?.desktopNotifications ? "on" : ""}`}
-                  onClick={async () => {
-                    try {
-                      await mutate(
-                        "/settings",
-                        "PATCH",
-                        {
-                          desktopNotifications:
-                            !data.settings?.desktopNotifications,
-                        },
-                        t("提醒设置已保存"),
-                      );
-                    } catch {}
-                  }}
-                >
-                  <span />
-                </button>
-              </div>
-              <p className="hint">
-                {desktop
-                  ? t("应用在系统托盘中运行时也能提醒。请让电脑保持唤醒，检查 Windows 的通知和勿扰设置。")
-                  : t("提醒与调度需要本地服务运行、电脑保持唤醒。关闭网页后，后台服务仍可工作。")}
-              </p>
-            </section>
+            <NotificationSettings enabled={!!data.settings?.desktopNotifications}
+              onChange={enabled => mutate("/settings", "PATCH", { desktopNotifications: enabled }, t("提醒设置已保存"))} />
             <McpConnection connection={mcpConnection} />
             <section>
               <h3>

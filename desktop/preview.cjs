@@ -2,12 +2,14 @@ const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
+const { createDesktopNotifications } = require('./notification-service.cjs');
+const { createDesktopUpdates } = require('./update-service.cjs');
 const root = path.resolve(__dirname, '..');
 const runtime = path.join(root, '.runtime');
 const profile = path.join(runtime, 'ui-preview-profile');
 app.setName('Daylight UI Preview');
 app.setPath('userData', profile);
-let service, window, origin;
+let service, window, origin, notifications, updates;
 let quitting = false;
 let startupClaimed = false;
 const verify = event => {
@@ -34,6 +36,23 @@ app.whenReady().then(async () => {
       body: JSON.stringify(example),
     });
   }
+  // Illustrate project accents using only this preview's synthetic data.
+  const previewState = await (await fetch(`${origin}/api/bootstrap`)).json();
+  if (!previewState.projects.length) {
+    for (const [name, color, titles] of [
+      ['学习', '#9a8ed2', ['整理今天的课堂笔记', '完成本周学习计划']],
+      ['小组项目', '#61a39a', ['准备小组讨论提纲']],
+    ]) {
+      const project = await (await fetch(`${origin}/api/projects`, { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Daylight-Token': state.csrfToken },
+        body: JSON.stringify({ name, color }) })).json();
+      for (const task of previewState.tasks.filter(task => !task.projectId && titles.includes(task.title))) {
+        await fetch(`${origin}/api/tasks/${task.id}`, { method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-Daylight-Token': state.csrfToken },
+          body: JSON.stringify({ projectId: project.id }) });
+      }
+    }
+  }
   window = new BrowserWindow({ width: 1400, height: 950, minWidth: 960, minHeight: 680, show: false, paintWhenInitiallyHidden: false,
     backgroundColor: '#f7f5ef', autoHideMenuBar: true, icon: path.join(root, 'desktop', 'assets', 'icon.png'),
     webPreferences: { preload: path.join(root, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
@@ -41,7 +60,17 @@ app.whenReady().then(async () => {
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (new URL(url).origin !== origin) event.preventDefault(); });
   window.on('page-title-updated', (event, title) => { event.preventDefault(); window.setTitle(`${title} · 界面预览（示例数据）`); });
-  ipcMain.handle('daylight:get-info', event => { verify(event); return { version: '0.2.0 预览', dataPath: path.join(profile, 'data'), autoLaunch: false, alwaysOnTop: window.isAlwaysOnTop(), isPackaged: false }; });
+  ipcMain.handle('daylight:get-info', event => { verify(event); return { version: `${require('../package.json').version} 预览`, dataPath: path.join(profile, 'data'), autoLaunch: false, alwaysOnTop: window.isAlwaysOnTop(), isPackaged: false }; });
+  notifications = createDesktopNotifications({ app, allowNative: false, smoke: true,
+    getEnabled: () => service.store.data.settings.desktopNotifications === true });
+  updates = createDesktopUpdates({ app, smoke: true, service, getWindow: () => window });
+  ipcMain.handle('daylight:update-status', event => { verify(event); return updates.getStatus(); });
+  ipcMain.handle('daylight:check-updates', event => { verify(event); return updates.check(); });
+  ipcMain.handle('daylight:download-update', event => { verify(event); return updates.download(); });
+  ipcMain.handle('daylight:update-editing', (event, value) => { verify(event); return updates.setEditing(value); });
+  ipcMain.handle('daylight:notification-status', event => { verify(event); return notifications.getStatus(); });
+  ipcMain.handle('daylight:test-notification', (event, language) => { verify(event); return notifications.sendTest(language); });
+  ipcMain.handle('daylight:notification-settings', event => { verify(event); return notifications.openSettings(); });
   ipcMain.handle('daylight:claim-startup', event => { verify(event); const first = !startupClaimed; startupClaimed = true; return first; });
   ipcMain.handle('daylight:set-theme', (event, theme) => { verify(event); if (!['day', 'night'].includes(theme)) throw new Error('Invalid theme'); nativeTheme.themeSource = theme === 'night' ? 'dark' : 'light'; window.setBackgroundColor(theme === 'night' ? '#111827' : '#f7f5ef'); return { theme }; });
   ipcMain.handle('daylight:set-always-on-top', (event, value) => { verify(event); if (typeof value !== 'boolean') throw new Error('Invalid pin'); window.setAlwaysOnTop(value); return { alwaysOnTop: value }; });
@@ -108,5 +137,7 @@ app.on('window-all-closed', () => app.quit());
 app.on('before-quit', event => {
   if (quitting) return;
   event.preventDefault(); quitting = true;
+  notifications?.dispose();
+  updates?.dispose();
   Promise.resolve(service?.close()).finally(() => app.quit());
 });

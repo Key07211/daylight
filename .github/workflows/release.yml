@@ -135,6 +135,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Electron still reports reduced motion; full-motion UI checks cannot run' }
       - name: Verify packaged app and installer
         run: |
+          & .\node_modules\.bin\electron.cmd desktop/project-filter-smoke.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Project filter interaction verification failed' }
           node desktop/smoke-packaged.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Packaged app verification failed' }
           node desktop/smoke-portable.mjs
@@ -194,7 +196,8 @@ jobs:
             builtAt = [DateTime]::UtcNow.ToString('o')
             platform = 'win32-x64'
             signed = $false
-            checks = @('unit-and-integration', 'packaged-app', 'portable-app', 'installer-payload', 'update-metadata', 'isolated-real-update-download')
+            checks = @('unit-and-integration', 'project-filter-interaction', 'packaged-app', 'portable-app', 'installer-payload', 'update-metadata', 'isolated-real-update-download')
+            projectFilter = Get-Content -LiteralPath .runtime/project-filter-smoke.json -Raw | ConvertFrom-Json
             update = Get-Content -LiteralPath .runtime/update-release-verification.json -Raw | ConvertFrom-Json
             updateDownload = Get-Content -LiteralPath .runtime/update-download-smoke.json -Raw | ConvertFrom-Json
             packaged = Get-Content -LiteralPath .runtime/desktop-smoke-packaged.json -Raw | ConvertFrom-Json

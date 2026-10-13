@@ -1,0 +1,23 @@
+.notification-settings .notification-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 6px 10px;
+  margin: 4px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 12px;
+}
+.notification-state > i { width: 6px; height: 6px; flex: none; border-radius: 50%; background: currentColor; }
+.notification-settings .notification-state[data-state="ready"] { color: var(--green); background: var(--accent-soft); }
+.notification-settings .notification-state[data-state="blocked"] { color: var(--warning); background: var(--warning-soft); }
+.notification-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.notification-settings .notification-feedback { margin: 10px 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.notification-settings .notification-feedback.is-error { color: var(--danger); }
+.notification-spinner { animation: notification-spin 1s linear infinite; }
+@keyframes notification-spin { to { transform: rotate(360deg); } }
+html[data-glass-motion="off"] .notification-spinner { animation: none; }
+@media (prefers-reduced-motion: reduce) { .notification-spinner { animation: none; } }

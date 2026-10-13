@@ -4,7 +4,7 @@
 
 A Windows task app that follows the light, weather, and rhythm of your day. Plan locally, enjoy liquid glass and changing skies, and connect your task list to Codex.
 
-**Windows x64 · v0.4.0 · English / 中文 · Local storage**
+**Windows x64 · v0.4.1 · English / 中文 · Local storage**
 
 [Download](https://github.com/Key07211/daylight/releases/latest) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [User guide (中文)](docs/USER_GUIDE.md) · [MCP guide (中文)](docs/MCP_GUIDE.md)
 
@@ -25,7 +25,7 @@ From v0.4.0, the installed app checks for updates at startup and every six hours
 | Feature | What it does |
 | --- | --- |
 | Tasks and projects | Create, edit, search, filter by project (including General), set priorities and deadlines; confirm completion and deletion |
-| Reminders | Set a separate reminder time, use the notification center and optional Windows notifications, keep running in the tray |
+| Reminders | Optional Windows notifications with permission status, a test button and system settings shortcut; reminders keep running in the tray |
 | Day and night | Follow the computer's clock: day at 07:00, night at 19:00; a manual choice lasts until the next switch or full exit |
 | Weather and openings | City-based clouds, rain, and snow; a sun moving toward the current time, a brightening moon, and descending stars |
 | Liquid glass | Adjust transparency, blur, and highlights; watch rain slide into the glass edge and sunflowers react to droplets |
@@ -76,6 +76,8 @@ npm run desktop
 ```
 
 `npm run desktop` uses the normal desktop data folder. For isolated sample data, use `npm run desktop:preview`; reminders, automatic execution, and MCP registration are disabled in that preview.
+
+Native Windows notifications run in the packaged app. Source previews do not register Electron as Daylight in Windows; use **Settings → Desktop reminders → Send test notification** in the installed app.
 
 For frontend development, run `npm start` and `npm run dev` in separate terminals. `Start-Daylight.cmd` and `Stop-Daylight.cmd` control the source web server; the installed desktop app does not need them. The server defaults to `127.0.0.1:4317`, so avoid running it alongside the desktop app on the same port.
 

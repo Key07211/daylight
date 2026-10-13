@@ -1,5 +1,5 @@
 // Developer-only public media capture. Never opens a user's Daylight profile.
-// Run after building: electron desktop/product-demo.cjs [--english] [--motion-only]
+// Run after building: electron desktop/product-demo.cjs [--english] [--motion-only | --project-filter-only]
 const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -12,6 +12,7 @@ fs.mkdirSync(runtime, { recursive: true });
 const profile = fs.mkdtempSync(path.join(runtime, 'product-demo-'));
 const english = process.argv.includes('--english');
 const motionOnly = process.argv.includes('--motion-only');
+const projectFilterOnly = process.argv.includes('--project-filter-only');
 const captureLanguage = english ? 'en' : 'zh';
 const mediaRoot = path.join(root, 'docs', 'media');
 const media = english ? path.join(mediaRoot, 'en') : mediaRoot;
@@ -81,7 +82,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('daylight:set-theme', (event, theme) => { verify(event); assert.ok(['day','night'].includes(theme)); nativeTheme.themeSource = theme === 'night' ? 'dark' : 'light'; return { theme }; });
   ipcMain.handle('daylight:set-always-on-top', (event, value) => { verify(event); assert.equal(typeof value, 'boolean'); window.setAlwaysOnTop(value); return { alwaysOnTop: value }; });
   ipcMain.handle('daylight:mcp-status', event => { verify(event); return { state: 'missing', registered: false, toolCount: 0, autoConnect: false, canConfigure: false, preview: true }; });
-  for (const channel of ['daylight:install-mcp','daylight:check-mcp','daylight:set-mcp-auto-connect','daylight:set-auto-launch','daylight:open-data-folder']) {
+  ipcMain.handle('daylight:notification-status', event => { verify(event); return { state: 'disabled', mode: 'preview', supported: false, canOpenSettings: false }; });
+  for (const channel of ['daylight:update-status', 'daylight:check-updates', 'daylight:download-update']) {
+    ipcMain.handle(channel, event => { verify(event); return { state: 'disabled', mode: 'disabled', revision: 0 }; });
+  }
+  ipcMain.handle('daylight:update-editing', (event, value) => { verify(event); assert.equal(typeof value, 'boolean'); return { editing: value }; });
+  for (const channel of ['daylight:install-mcp','daylight:check-mcp','daylight:set-mcp-auto-connect','daylight:set-auto-launch','daylight:open-data-folder','daylight:test-notification','daylight:notification-settings']) {
     ipcMain.handle(channel, event => { verify(event); throw new Error('System changes are disabled in this public demo.'); });
   }
   await window.loadURL('about:blank');
@@ -111,12 +117,24 @@ app.whenReady().then(async () => {
     console.log(JSON.stringify(report));
     await service.close(); window.destroy(); app.quit(); return;
   }
-  await capture('tasks-day');
-  await evaluate('document.querySelector("#task-project-filter").value="general"; document.querySelector("#task-project-filter").dispatchEvent(new Event("change",{bubbles:true}))');
+  if (!projectFilterOnly) await capture('tasks-day');
+  await click('#task-project-filter');
+  await click('[data-project-option="general"]');
   await until('document.querySelector("#task-project-filter").value === "general" && document.querySelectorAll(".task-row").length === 3');
+  await click('#task-project-filter');
+  await until('document.querySelector("#task-project-filter").getAttribute("aria-expanded") === "true" && document.querySelector("[data-project-option=general]")?.getAttribute("aria-selected") === "true"');
   await capture('project-filter');
-  await evaluate('document.querySelector("#task-project-filter").value="all"; document.querySelector("#task-project-filter").dispatchEvent(new Event("change",{bubbles:true}))');
+  await click('[data-project-option="all"]');
   await until('document.querySelectorAll(".task-row").length === 5');
+  if (projectFilterOnly) {
+    assert.equal(report.externalRequests, 0);
+    assert.equal(service.store.data.runs.length, 0);
+    assert.equal((await request('/tasks', 'GET')).filter(item => item.completed).length, 1);
+    report.checks.push('Fresh isolated profile', 'Six synthetic tasks only', 'No external requests', 'No Codex registration or execution', 'Opened glass project menu with General selected', 'All projects restored');
+    fs.writeFileSync(path.join(runtime, `product-demo-project-filter-report${english ? '-en' : ''}.json`), JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(report));
+    await service.close(); window.destroy(); app.quit(); return;
+  }
   await click('.task-main');
   await until('!!document.querySelector(".task-form")');
   await capture('task-editor');
