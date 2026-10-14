@@ -160,6 +160,7 @@ try {
   assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setAutoLaunch', 'openDataFolder',
     'getNotificationStatus', 'testNotification', 'openNotificationSettings', 'onNotificationStatus',
     'installMcp', 'getMcpStatus', 'checkMcp', 'setMcpAutoConnect', 'onMcpStatus',
+    'connectClaude', 'getClaudeStatus', 'checkClaude', 'setClaudeAutoConnect', 'onClaudeStatus',
     'getUpdateStatus', 'checkForUpdates', 'downloadUpdate', 'setUpdateEditing', 'onUpdateStatus']);
   assert.deepEqual(report.updateSafety, { disabledInSmoke: true, noUpdateWork: true, invalidEditingRejected: true });
   assert.deepEqual(report.notificationSafety, { disabledInSmoke: true, noToastSent: true, noSettingsOpened: true, invalidLanguageRejected: true });

@@ -4,7 +4,7 @@
 
 一份随时间与天气变化的 Windows 桌面清单。用液态玻璃、向日葵、月光与雨窗陪伴日常工作，也能让本机 Codex 管理任务。
 
-**Windows x64 · v0.4.2 · 中文 / English · 本地保存**
+**Windows x64 · v0.4.3 · 中文 / English · 本地保存**
 
 [下载](https://github.com/Key07211/daylight/releases/latest) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md)
 
