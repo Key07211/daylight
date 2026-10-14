@@ -310,6 +310,10 @@ module.exports = async function testInterface(window, origin, output) {
     checks.notificationPreferencePersists = (await bootstrap()).settings.desktopNotifications === true;
     checks.notificationSmokeIsHonest = await evaluate("document.querySelector('.notification-state').textContent.includes('预览中不发送通知') && document.querySelector('[data-action=test-notification]').disabled && !document.querySelector('[data-action=notification-settings]')");
     checks.mcpSmokeCannotChangeRealConfig = await evaluate("Boolean(document.querySelector('[data-testid=\"mcp-connection\"] button:disabled')) && document.querySelector('[data-testid=\"mcp-connection\"]').dataset.state === 'unavailable'");
+    checks.claudeSmokeCannotChangeRealConfig = await evaluate("Boolean(document.querySelector('[data-testid=\"claude-connection\"] button:disabled')) && document.querySelector('[data-testid=\"claude-connection\"]').dataset.state === 'unavailable'");
+    checks.claudeAutoConnectRejectsInvalidInput = await evaluate(`(async () => {
+      try { await window.daylightDesktop.setClaudeAutoConnect('yes'); return false; } catch { return true; }
+    })()`);
     checks.mcpAutoConnectRejectsInvalidInput = await evaluate(`(async () => {
       try { await window.daylightDesktop.setMcpAutoConnect('yes'); return false; } catch { return true; }
     })()`);

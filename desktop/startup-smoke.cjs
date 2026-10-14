@@ -72,8 +72,9 @@ function installBridge() {
   });
   const unavailable = event => { verify(event); return { state: 'unavailable', registered: false, toolCount: 0, autoConnect: false, canConfigure: false, preview: true }; };
   ipcMain.handle('daylight:mcp-status', unavailable);
+  ipcMain.handle('daylight:claude-status', unavailable);
   ipcMain.handle('daylight:check-mcp', unavailable);
-  for (const channel of ['daylight:set-always-on-top', 'daylight:set-auto-launch', 'daylight:open-data-folder', 'daylight:install-mcp', 'daylight:set-mcp-auto-connect']) {
+  for (const channel of ['daylight:set-always-on-top', 'daylight:set-auto-launch', 'daylight:open-data-folder', 'daylight:install-mcp', 'daylight:connect-claude', 'daylight:check-claude', 'daylight:set-claude-auto-connect', 'daylight:set-mcp-auto-connect']) {
     ipcMain.handle(channel, event => { verify(event); throw new Error('System and connection writes are disabled in startup smoke tests.'); });
   }
 }

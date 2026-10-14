@@ -4,6 +4,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { resolveCodex } = require('./codex-path.cjs');
 const { createDesktopMcp } = require('./mcp-controller.cjs');
+const { createClaudeConnection } = require('./claude-connection.cjs');
 const { createDesktopUpdates } = require('./update-service.cjs');
 const { createDesktopNotifications } = require('./notification-service.cjs');
 
@@ -31,6 +32,7 @@ let tray;
 let origin;
 let codexCommand;
 let mcp;
+let claude;
 let updates;
 let desktopNotifications;
 let quitting = false;
@@ -151,6 +153,23 @@ function setupIpc() {
     verifiedSender(event);
     if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
     return mcp.setAutoConnect(enabled);
+  });
+  ipcMain.handle('daylight:connect-claude', async event => {
+    verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
+    if (process.env.PORTABLE_EXECUTABLE_DIR) throw new Error('请先安装 Daylight，再添加稳定的 Claude MCP 连接。');
+    return claude.connect();
+  });
+  ipcMain.handle('daylight:claude-status', event => { verifiedSender(event); return claude.getStatus(); });
+  ipcMain.handle('daylight:check-claude', event => {
+    verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
+    return claude.check();
+  });
+  ipcMain.handle('daylight:set-claude-auto-connect', (event, enabled) => {
+    verifiedSender(event);
+    if (updates.isPreparing()) throw new Error('Daylight is restarting to install an update.');
+    return claude.setAutoConnect(enabled);
   });
   ipcMain.handle('daylight:update-status', event => { verifiedSender(event); return updates.getStatus(); });
   ipcMain.handle('daylight:check-updates', event => { verifiedSender(event); return updates.check(); });
@@ -312,7 +331,15 @@ async function boot() {
     disabled: smoke || Boolean(process.env.PORTABLE_EXECUTABLE_DIR),
     installedRuntime: app.isPackaged && !smoke && !process.env.PORTABLE_EXECUTABLE_DIR,
     notify: status => { if (window && !window.isDestroyed()) window.webContents.send('daylight:mcp-status-changed', status); } });
-  updates = createDesktopUpdates({ app, shell, service, smoke, getWindow: () => window, getMcpStatus: () => mcp.getStatus() });
+  const bridge = path.join(app.getAppPath(), 'integrations', 'mcp-server.mjs');
+  const claudeDisabled = smoke || Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
+  claude = createDesktopMcp({ origin, preferencesPath: path.join(profileDir, 'claude-mcp-preferences.json'),
+    defaultAutoConnect: !smoke, disabled: claudeDisabled,
+    manager: claudeDisabled ? undefined : createClaudeConnection({ command: process.execPath, args: [bridge],
+      env: { ELECTRON_RUN_AS_NODE: '1', DAYLIGHT_URL: origin } }),
+    notify: status => { if (window && !window.isDestroyed()) window.webContents.send('daylight:claude-status-changed', status); } });
+  updates = createDesktopUpdates({ app, shell, service, smoke, getWindow: () => window,
+    getMcpStatus: () => ({ checking: mcp.getStatus().checking || claude.getStatus().checking }) });
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -324,7 +351,7 @@ async function boot() {
   setupIpc();
   await createWindow();
   updates.start();
-  if (!smoke) void mcp.start();
+  if (!smoke) { void mcp.start(); void claude.start(); }
   if (!smoke && !app.isPackaged && process.argv.includes('--demo-weather')) {
     await require('./demo.cjs')({ window, origin, profileDir, root: app.getAppPath(), mcp });
   }

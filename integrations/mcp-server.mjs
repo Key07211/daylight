@@ -27,6 +27,15 @@ const taskFields = {
   automation: automation.optional().describe('Codex schedule. Set enabled only when the user requests automatic runs. Defaults to read-only sandbox.'),
 };
 
+// Shared by Codex, Claude Code and Claude Desktop; clients show this to the model.
+export const INSTRUCTIONS = [
+  'Daylight is the user\'s local Windows to-do list. Use these tools to read and manage its tasks, projects, reminders and notifications.',
+  'Call daylight_list_tasks (or daylight_list_projects) first to find IDs; when several tasks share a title, ask the user which one before changing it.',
+  'Dates must be ISO 8601 with a timezone offset. Interpret relative times like "tomorrow 8pm" in the user\'s local timezone; daylight_status returns the computer\'s current time and timezone.',
+  'Writes take effect immediately without the in-app confirmation dialog, and deletion is permanent. Only delete or complete tasks the user asked about.',
+  'Task automation runs the local Codex CLI. Only enable automation or call daylight_run_task when the user explicitly asks for a Codex run.',
+].join('\n');
+
 export function localBaseUrl(value = process.env.DAYLIGHT_URL || 'http://127.0.0.1:4317') {
   const url = new URL(value);
   if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(url.hostname)
@@ -38,7 +47,7 @@ export function localBaseUrl(value = process.env.DAYLIGHT_URL || 'http://127.0.0
 
 export function createDaylightServer({ baseUrl = localBaseUrl() } = {}) {
   const origin = localBaseUrl(baseUrl);
-  const server = new McpServer({ name: 'daylight', version: '1.0.0' });
+  const server = new McpServer({ name: 'daylight', version: '1.0.0' }, { instructions: INSTRUCTIONS });
 
   async function request(path, { method = 'GET', body, token } = {}) {
     let response;
@@ -55,7 +64,7 @@ export function createDaylightServer({ baseUrl = localBaseUrl() } = {}) {
         signal: AbortSignal.timeout(15000),
       });
     } catch (error) {
-      throw new Error(`Cannot reach Daylight at ${origin}. Start the local app with Start-Daylight.cmd. ${error.message}`);
+      throw new Error(`Cannot reach Daylight at ${origin}. Open the Daylight desktop app (or run Start-Daylight.cmd for the source service). ${error.message}`);
     }
     let result;
     try { result = await response.json(); }
@@ -86,9 +95,10 @@ export function createDaylightServer({ baseUrl = localBaseUrl() } = {}) {
   }
 
   const readOnly = { readOnlyHint: true, idempotentHint: true };
-  tool('daylight_status', 'Read Daylight local service settings and Codex CLI readiness. Does not execute Codex.', {}, async () => {
-    const { settings, codex } = await request('/api/bootstrap');
-    return { serviceUrl: origin, settings, codex };
+  tool('daylight_status', 'Read Daylight local service settings, the computer\'s current time and timezone, and Codex CLI readiness. Does not execute Codex.', {}, async () => {
+    const { settings, codex, serverTime } = await request('/api/bootstrap');
+    return { serviceUrl: origin, serverTime, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      utcOffsetMinutes: -new Date().getTimezoneOffset(), settings, codex };
   }, readOnly);
 
   tool('daylight_list_tasks', 'List local tasks; optionally filter by status, project, priority, text or due-date bounds. Date bounds are inclusive. Returns stable IDs for editing.', {

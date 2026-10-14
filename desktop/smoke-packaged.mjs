@@ -86,7 +86,7 @@ try {
   assert.ok((await fs.stat(archive)).isFile(), 'App must load from resources/app.asar');
   const archiveFiles = new Set(asar.listPackage(archive).map(entry => entry.replaceAll('\\', '/').replace(/^\//, '')));
   const requiredFiles = ['package.json', 'dist/index.html', 'desktop/main.cjs', 'desktop/preload.cjs',
-    'desktop/ui-smoke.cjs', 'desktop/codex-path.cjs', 'desktop/mcp-controller.cjs', 'desktop/mcp-connection.cjs', 'desktop/mcp-migration.cjs',
+    'desktop/ui-smoke.cjs', 'desktop/codex-path.cjs', 'desktop/mcp-controller.cjs', 'desktop/mcp-connection.cjs', 'desktop/claude-connection.cjs', 'desktop/mcp-migration.cjs',
     'desktop/update-controller.cjs', 'desktop/update-service.cjs', 'desktop/notification-service.cjs', 'node_modules/electron-updater/package.json', 'node_modules/electron-updater/out/main.js',
     'server/app.mjs', 'server/store.mjs', 'server/scheduler.mjs', 'integrations/mcp-server.mjs'];
   for (const entry of requiredFiles) assert.ok(archiveFiles.has(entry), `Missing packaged dependency: ${entry}`);
@@ -137,6 +137,7 @@ try {
   assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setAutoLaunch', 'openDataFolder',
     'getNotificationStatus', 'testNotification', 'openNotificationSettings', 'onNotificationStatus',
     'installMcp', 'getMcpStatus', 'checkMcp', 'setMcpAutoConnect', 'onMcpStatus',
+    'connectClaude', 'getClaudeStatus', 'checkClaude', 'setClaudeAutoConnect', 'onClaudeStatus',
     'getUpdateStatus', 'checkForUpdates', 'downloadUpdate', 'setUpdateEditing', 'onUpdateStatus']);
   assert.deepEqual(report.updateSafety, { disabledInSmoke: true, noUpdateWork: true, invalidEditingRejected: true });
   assert.deepEqual(report.notificationSafety, { disabledInSmoke: true, noToastSent: true, noSettingsOpened: true, invalidLanguageRejected: true });

@@ -1,8 +1,8 @@
 # Daylight 使用手册
 
-Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒，也可以让 Codex 管理清单，或让 Daylight 按时运行 Codex 指令。普通清单功能无需注册 Daylight 账号。本手册适用于 0.4.2。
+Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒，也可以让 Codex 或 Claude（Claude Code、Claude Desktop）管理清单，或让 Daylight 按时运行 Codex 指令。普通清单功能无需注册 Daylight 账号。本手册适用于 0.4.3。
 
-下载入口和当前版本见[项目首页](../README.md)。Codex 的连接、工具和调度配置见 [MCP 与 Codex 指南](MCP_GUIDE.md)。本手册中的任务名称均为示例。
+下载入口和当前版本见[项目首页](../README.md)。Codex 与 Claude 的连接、工具和调度配置见 [MCP 指南](MCP_GUIDE.md)。本手册中的任务名称均为示例。
 
 想先看一遍操作，可以下载仓库后在浏览器打开[离线产品演示](demo.html)。它展示示例截图与动画，不会写入你的任务。
 
@@ -22,14 +22,14 @@ Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒�
 
 | 版本 | 如何打开 | 适合的用法 |
 | --- | --- | --- |
-| 安装版 | 运行 `Daylight-Setup-0.4.2.exe`，按向导安装，再从桌面或开始菜单打开 | 日常使用、Codex MCP 自动连接、登录 Windows 后启动 |
-| 免安装版 | 将 `Daylight-Portable-0.4.2.zip` 完整解压，运行其中的同名 `.exe` | 先体验应用，或不希望安装程序 |
+| 安装版 | 运行 `Daylight-Setup-0.4.3.exe`，按向导安装，再从桌面或开始菜单打开 | 日常使用、Codex 与 Claude 的 MCP 自动连接、登录 Windows 后启动 |
+| 免安装版 | 将 `Daylight-Portable-0.4.3.zip` 完整解压，运行其中的同名 `.exe` | 先体验应用，或不希望安装程序 |
 
 安装版默认安装到当前 Windows 用户，无需管理员权限。手动运行安装包更新前，请在系统托盘中退出旧版 Daylight，避免文件被占用。正常更新不会清空任务。
 
 免安装程序首次打开时需要短暂解包。它的任务仍保存在本机 `%APPDATA%\Daylight`，与安装版共用数据，**不会随 ZIP 一起携带**。一次只运行其中一个版本。免安装版不提供 MCP 自动登记和 Windows 登录启动；已有可用的 MCP 连接仍能访问它运行的本地服务。
 
-下载页会提供校验文件。可在下载目录打开 PowerShell，用 `Get-FileHash .\Daylight-Setup-0.4.2.exe -Algorithm SHA256` 计算摘要，与发布的校验值对照；免安装版请替换为对应 ZIP 文件名。是否已签名以对应发行说明为准。
+下载页会提供校验文件。可在下载目录打开 PowerShell，用 `Get-FileHash .\Daylight-Setup-0.4.3.exe -Algorithm SHA256` 计算摘要，与发布的校验值对照；免安装版请替换为对应 ZIP 文件名。是否已签名以对应发行说明为准。
 
 ### 更新应用
 
@@ -80,7 +80,7 @@ Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒�
 
 保存或删除处理中，弹窗会暂时阻止重复操作。出现错误时，查看提示并重试，不必连续点击。
 
-通过 MCP 修改任务时，Codex 使用工具直接提交操作，不会在 Daylight 内弹出这些确认框。请在指令中明确对象和操作，详见 [MCP 指南](MCP_GUIDE.md#让-codex-管理清单)。
+通过 MCP 修改任务时，Codex 或 Claude 使用工具直接提交操作，不会在 Daylight 内弹出这些确认框。请在指令中明确对象和操作，详见 [MCP 指南](MCP_GUIDE.md#让-codex-管理清单)。
 
 ### 项目、搜索和筛选
 
@@ -163,6 +163,53 @@ Daylight 是 Windows 本地任务清单。你可以整理任务、设置提醒�
 
 断网时，应用会使用有效缓存并标明「缓存」，或显示天气不可用。天气获取失败不会阻止本地任务操作。天气服务来源见设置中的署名链接。
 
+## 让 Claude 管理清单
+
+安装版可以把 Daylight 连接到本机的 **Claude Code** 和 **Claude Desktop**（含 Microsoft Store 版）。连接后，你可以在 Claude 中用自然语言查询、新建、修改、完成或删除任务，管理项目、提醒和通知。Claude 使用的是与 Codex 相同的 14 个工具。
+
+![设置与连接中的 Codex 与 Claude 卡片](media/claude-connection.webp)
+
+### 连接步骤
+
+1. 在电脑上安装 Claude Code 或 Claude Desktop，两者装一个即可。
+2. 打开 Daylight 安装版，点击左下角「设置与连接」，在 Codex 卡片下方找到 **Claude** 卡片。
+3. 默认已勾选「启动时自动连接」，Daylight 每次启动都会检查并登记。也可以直接点击「连接 Claude」。
+4. 卡片显示「Claude 工具已就绪」，并列出已连接的客户端（Claude Code、Claude Desktop）后即可使用。
+5. Claude Code：新开一个会话，输入 `/mcp` 可看到 `daylight`。Claude Desktop：从系统托盘**完全退出**后重新打开，在新对话的工具菜单中可以看到 Daylight。
+
+Daylight 需要保持运行（窗口关闭、留在托盘中即可），Claude 才能读写任务。Daylight 未运行时，Claude 调用工具会提示无法连接本地清单。
+
+### 可以这样对 Claude 说
+
+> 用 Daylight 看看我今天还有哪些没完成的任务，按优先级排列。
+
+> 在 Daylight 新建“整理阅读笔记”，明天晚上八点截止，七点半提醒我，优先级高，放到「学习」项目。
+
+> 把“整理阅读笔记”的截止时间改到周五下午五点；如果有同名任务，先列出来让我选。
+
+> 将“整理阅读笔记”标记为完成。
+
+Claude 会先查询任务 ID 再修改，并按电脑的本地时区理解“明天”“周五”等时间。通过 Claude 完成或删除任务时**不会弹出** Daylight 的确认框，删除没有回收站，请在指令中说清楚要操作的任务。只有你明确要求时，Claude 才应开启 Codex 调度或立即运行 Codex 任务。
+
+### 卡片状态
+
+| 卡片显示 | 含义与下一步 |
+| --- | --- |
+| Claude 工具已就绪 | 已登记并通过检查，按上面第 5 步刷新 Claude 后使用 |
+| 尚未连接 Claude | 点击「连接 Claude」，或开启启动时自动连接 |
+| 未检测到 Claude | 本机没有 Claude Code 或 Claude Desktop；安装后重新打开 Daylight |
+| 连接配置需调整 | Claude 配置中已有指向其他程序的 `daylight` 项，Daylight 没有改动它；请在 Claude 配置中核对或删除后重试 |
+| 连接测试未通过 | 保持 Daylight 运行，检查端口 `4317` 是否被占用，再点击重试 |
+
+### 连接会改动什么
+
+Daylight 只在已安装的客户端配置中添加或更新名为 `daylight` 的一项，其他 MCP 服务器和设置保持不变，并在写入前于原文件旁保存一份 `.daylight-backup` 备份：
+
+- Claude Code：`%USERPROFILE%\.claude.json` 中的用户级 `mcpServers`
+- Claude Desktop：`%APPDATA%\Claude\claude_desktop_config.json`（Store 版位于 `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude`）
+
+「检查连接」只读取，不写入。不想再连接时，先取消 Claude 卡片的「启动时自动连接」，再运行 `claude mcp remove daylight -s user`，或从 `claude_desktop_config.json` 删除 `daylight` 一项。移除连接不会删除任务。免安装版不自动登记 Claude。更多细节见 [MCP 指南](MCP_GUIDE.md#连接-claude-code-与-claude-desktop)。
+
 ## 两种 Codex 用法
 
 | 想做什么 | 使用哪项功能 |
@@ -224,8 +271,9 @@ Codex 执行需要应用运行、电脑唤醒、网络和有效登录，并可�
 | 本地提醒 | 不需要网络，但应用须运行、电脑须唤醒 |
 | 实时天气与城市识别 | 需要；断网使用有效缓存或显示不可用 |
 | Codex 聊天和模型执行 | 需要相应 Codex 服务、登录与网络 |
+| Claude 聊天 | 需要 Claude 服务、登录与网络；Daylight 本身仍在本机读写任务 |
 
-应用没有跨设备同步、移动端推送或系统唤醒功能。通过 Codex 处理的任务和文件内容会按照 Codex 的工作方式发送到其服务，不能把“任务保存在本机”等同于“所有 AI 处理都在离线完成”。
+应用没有跨设备同步、移动端推送或系统唤醒功能。通过 Codex 或 Claude 处理的任务和文件内容会按照它们的工作方式发送到相应服务，不能把“任务保存在本机”等同于“所有 AI 处理都在离线完成”。
 
 ## 常见问题
 
@@ -242,7 +290,8 @@ Codex 执行需要应用运行、电脑唤醒、网络和有效登录，并可�
 | 显示正在重新连接 | 等待重试或点「立即重试」；确认本地端口 `4317` 没有被另一个 Daylight 或旧开发服务占用 |
 | 任务在不同启动方式中不一样 | 正式桌面应用使用 `%APPDATA%\Daylight`；源码 Web 服务与独立演示窗口使用各自的数据目录 |
 | Codex 显示不可用或运行失败 | 参见 [Codex 连接排查](MCP_GUIDE.md#连接和运行排查)，区分连接、CLI、登录及执行错误 |
+| Claude 里看不到 Daylight 工具 | Claude 卡片是否显示已就绪？Claude Code 需新开会话，Claude Desktop 需从托盘完全退出再打开；Daylight 是否仍在运行？ |
 
 开发者可用 `npm run desktop:preview` 打开独立示例窗口。它不会登记真实 MCP 连接，也不会运行提醒和 Codex 调度；窗口中的示例任务与正式数据分开。
 
-返回[项目首页](../README.md) · 阅读 [MCP 与 Codex 指南](MCP_GUIDE.md)
+返回[项目首页](../README.md) · 阅读 [MCP 指南](MCP_GUIDE.md)

@@ -13,3 +13,4 @@
 .mcp-auto-connect input { width: 15px; height: 15px; padding: 0; margin: 0; accent-color: var(--green); }
 .mcp-compact { margin-bottom: 26px; }
 .mcp-compact .mcp-connection-actions { margin-top: 12px; }
+.mcp-claude .mcp-connection-icon { background: rgb(217 119 87 / .16); color: #c96442; }

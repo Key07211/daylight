@@ -4,7 +4,7 @@
 
 一份随时间与天气变化的 Windows 桌面清单。用液态玻璃、向日葵、月光与雨窗陪伴日常工作，也能让本机 Codex 管理任务。
 
-**Windows x64 · v0.4.2 · 中文 / English · 本地保存**
+**Windows x64 · v0.4.3 · 中文 / English · 本地保存**
 
 [下载](https://github.com/Key07211/daylight/releases/latest) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [使用手册](docs/USER_GUIDE.md) · [MCP 连接指南](docs/MCP_GUIDE.md)
 
@@ -32,6 +32,7 @@
 | 桌面控制 | 窗口置顶、托盘、中英文切换、减少动态、JSON 导出 |
 | 版本更新 | 自动检查版本、置顶右侧蓝色圆点、下载进度，主动下载完成后自动安装并重启 |
 | Codex MCP | Codex 查询和管理清单、通知与执行结果，共 14 个工具 |
+| Claude MCP | Claude Code 与 Claude Desktop 使用同样的 14 个工具，在设置中自动连接 |
 | Codex 调度 | 为任务配置提示词、目录、时间和重复规则，调用本机 `codex exec` |
 
 天气通过网络定位和 Open-Meteo 获取，可手动修正城市。天气城市的时区不会改变电脑的日夜切换规则。离线时仍可管理任务，天气会使用缓存或显示不可用。提醒与调度要求应用运行、电脑处于唤醒状态。
@@ -49,6 +50,14 @@
 **让清单调度 Codex。** 在任务详情中主动开启自动执行，填写工作目录、提示词和执行时间。默认使用只读沙箱，可按需要选择工作区写入。该功能需要 Codex CLI、有效登录与网络，运行会使用 Codex 账户用量。它与 Codex 桌面内置 Automations 独立，安装 Daylight 不会自动创建 AI 作业。
 
 MCP 的任务修改直接生效，不经过应用界面的确认弹窗；调用时请明确要操作的任务。Daylight 只监听本机回环地址，不提供跨设备同步。
+
+## 连接 Claude
+
+安装版也会为本机已安装的 **Claude Code**（`~/.claude.json` 用户级）和 **Claude Desktop**（`claude_desktop_config.json`）登记 Daylight，并做同样的握手与只读状态检查。在左下角「设置与连接」的 Codex 卡片下方可以看到 Claude 卡片。Claude Code 新开会话、Claude Desktop 完全退出后重新打开，即可这样说：
+
+> 在 Daylight 新建“整理阅读笔记”，明天 20:00 截止，19:30 提醒。
+
+只添加或更新 `daylight` 一项，其他服务器与设置保持不变，写入前会在原文件旁备份。详见 [MCP 连接指南](docs/MCP_GUIDE.md#连接-claude-code-与-claude-desktop)。
 
 ## 产品演示
 

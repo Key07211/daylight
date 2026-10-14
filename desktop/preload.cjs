@@ -26,6 +26,16 @@ contextBridge.exposeInMainWorld('daylightDesktop', Object.freeze({
     ipcRenderer.on('daylight:mcp-status-changed', listener);
     return () => ipcRenderer.removeListener('daylight:mcp-status-changed', listener);
   },
+  connectClaude: () => ipcRenderer.invoke('daylight:connect-claude'),
+  getClaudeStatus: () => ipcRenderer.invoke('daylight:claude-status'),
+  checkClaude: () => ipcRenderer.invoke('daylight:check-claude'),
+  setClaudeAutoConnect: enabled => ipcRenderer.invoke('daylight:set-claude-auto-connect', enabled),
+  onClaudeStatus: callback => {
+    if (typeof callback !== 'function') throw new TypeError('A status callback is required.');
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('daylight:claude-status-changed', listener);
+    return () => ipcRenderer.removeListener('daylight:claude-status-changed', listener);
+  },
   getUpdateStatus: () => ipcRenderer.invoke('daylight:update-status'),
   checkForUpdates: () => ipcRenderer.invoke('daylight:check-updates'),
   downloadUpdate: () => ipcRenderer.invoke('daylight:download-update'),

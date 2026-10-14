@@ -1,6 +1,6 @@
 {
   "name": "daylight-local-tasks",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "type": "module",
   "description": "日光清单 · 本地任务与 Codex 调度",
@@ -49,6 +49,7 @@
       "desktop/preload.cjs",
       "desktop/codex-path.cjs",
       "desktop/mcp-connection.cjs",
+      "desktop/claude-connection.cjs",
       "desktop/mcp-controller.cjs",
       "desktop/mcp-migration.cjs",
       "desktop/assets/**/*",

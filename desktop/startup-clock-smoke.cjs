@@ -44,8 +44,9 @@ function installBridge() {
   ipcMain.handle('daylight:set-theme', (event, theme) => { verify(event); assert.ok(['day', 'night'].includes(theme)); return { theme }; });
   const unavailable = event => { verify(event); return { state: 'unavailable', registered: false, toolCount: 0, autoConnect: false, canConfigure: false }; };
   ipcMain.handle('daylight:mcp-status', unavailable);
+  ipcMain.handle('daylight:claude-status', unavailable);
   ipcMain.handle('daylight:check-mcp', unavailable);
-  for (const channel of ['daylight:set-always-on-top', 'daylight:set-auto-launch', 'daylight:open-data-folder', 'daylight:install-mcp', 'daylight:set-mcp-auto-connect']) {
+  for (const channel of ['daylight:set-always-on-top', 'daylight:set-auto-launch', 'daylight:open-data-folder', 'daylight:install-mcp', 'daylight:connect-claude', 'daylight:check-claude', 'daylight:set-claude-auto-connect', 'daylight:set-mcp-auto-connect']) {
     ipcMain.handle(channel, event => { verify(event); throw new Error('Native writes are disabled in the isolated clock test.'); });
   }
 }
