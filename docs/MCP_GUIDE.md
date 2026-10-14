@@ -1,4 +1,4 @@
-# Daylight 的 MCP 与 Codex 指南
+# Daylight 的 MCP、Codex 与 Claude 指南
 
 本指南适用于 Daylight 0.3.0，说明如何让 Codex 访问 Daylight，以及如何从 Daylight 启动 Codex 作业。普通任务、提醒和外观设置见[使用手册](USER_GUIDE.md)；下载入口见[项目首页](../README.md)。
 
@@ -60,6 +60,39 @@ MCP 就绪只表示工具和本地服务可访问，不表示你已经启用定�
 | 连接测试未通过 | 保持 Daylight 运行，检查端口及程序路径，再点击重试 |
 
 已有同名、停用或自定义连接时，不要反复删除后重建。先查看配置，尤其是你已经设置过的工具允许列表、禁用列表及额外环境变量。
+
+## 连接 Claude Code 与 Claude Desktop
+
+Claude 使用与 Codex 相同的 Daylight MCP 服务和 14 个工具，可以查询、新建、修改、完成或删除任务，管理项目、提醒和通知。服务会把使用说明（先查 ID、日期须带时区、删除不可恢复、只有明确要求时才运行 Codex）随握手一起交给 Claude。
+
+1. 安装 Claude Code 或 Claude Desktop（Microsoft Store 版也支持）。
+2. 打开 **Daylight 安装版**，进入左下角「设置与连接」，找到 Codex 卡片下方的 **Claude** 卡片。
+3. 保持「启动时自动连接」开启，或点击「连接 Claude」。看到「Claude 工具已就绪」及已连接的客户端名称即可。
+4. Claude Code：新开一个会话，`/mcp` 中会出现 `daylight`。Claude Desktop：从托盘完全退出后重新打开，在新对话的工具菜单中可以看到 Daylight。
+
+连接写入的位置：
+
+| 客户端 | 配置文件 | 写入内容 |
+| --- | --- | --- |
+| Claude Code | `%USERPROFILE%\.claude.json`（设置了 `CLAUDE_CONFIG_DIR` 时位于该目录）的用户级 `mcpServers` | `daylight`，`type: "stdio"` |
+| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json`；Store 版位于 `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude` | `daylight` |
+
+只登记已安装的客户端。写入前会在原文件旁保存 `*.daylight-backup`，只添加或更新 `daylight` 一项，其他 MCP 服务器和设置保持不变。已有指向别的程序的同名 `daylight` 时显示「连接配置需调整」，不做修改；只有能确认是旧版 Daylight 桥接（例如安装目录变化）时才会改为当前路径，并保留原有额外环境变量。「检查连接」始终只读。
+
+可以对 Claude 这样说：
+
+> 用 Daylight 看看我今天还有哪些没完成的任务。
+>
+> 在 Daylight 新建“整理阅读笔记”，明天晚上八点截止，七点半提醒我，优先级高。
+
+源码用户可以手动登记（先启动本地服务，把路径换成自己的仓库位置）：
+
+```powershell
+claude mcp add-json daylight --scope user '{"type":"stdio","command":"node","args":["C:\\path\\to\\daylight\\integrations\\mcp-server.mjs"],"env":{"DAYLIGHT_URL":"http://127.0.0.1:4317"}}'
+claude mcp get daylight
+```
+
+移除登记用 `claude mcp remove daylight -s user`，或删除 `claude_desktop_config.json` 中的 `daylight` 项；同时在 Daylight 中关闭 Claude 卡片的「启动时自动连接」，避免下次启动重新登记。
 
 ## 让 Codex 管理清单
 

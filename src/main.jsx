@@ -257,6 +257,7 @@ function App() {
   const { settings: glassSettings, setSettings: setGlassSettings, resetSettings: resetGlassSettings } = useGlassPreferences();
   const climate = useWeather();
   const mcpConnection = useMcpConnection();
+  const claudeConnection = useMcpConnection('claude');
   const updates = useAppUpdate();
   const panelRef = useRef(null);
   const rainIntensity = climate.atmosphere.rainIntensity;
@@ -1409,6 +1410,7 @@ function App() {
             <NotificationSettings enabled={!!data.settings?.desktopNotifications}
               onChange={enabled => mutate("/settings", "PATCH", { desktopNotifications: enabled }, t("提醒设置已保存"))} />
             <McpConnection connection={mcpConnection} />
+            <McpConnection connection={claudeConnection} />
             <section>
               <h3>
                 <Download size={17} />{t("数据与备份")}</h3>
@@ -1489,6 +1491,7 @@ function App() {
                 </p>
                 <div className="example-prompt">{t("“在日光清单里创建一项任务：明天下午三点检查报告，提前十分钟提醒我。”")}</div>
                 <p>{t("连接后支持查询、新建、修改、删除任务与触发调度。")}</p>
+                {desktop && <p>{t("Claude Code 与 Claude Desktop 使用同一套工具，启动时也会自动连接；状态见「设置与连接」中的 Claude 卡片。", "Claude Code and Claude Desktop use the same tools and also connect on startup; see the Claude card in Settings.")}</p>}
               </div>
             </div>
             <div className="help-note">

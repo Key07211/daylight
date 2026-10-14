@@ -82,12 +82,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('daylight:set-theme', (event, theme) => { verify(event); assert.ok(['day','night'].includes(theme)); nativeTheme.themeSource = theme === 'night' ? 'dark' : 'light'; return { theme }; });
   ipcMain.handle('daylight:set-always-on-top', (event, value) => { verify(event); assert.equal(typeof value, 'boolean'); window.setAlwaysOnTop(value); return { alwaysOnTop: value }; });
   ipcMain.handle('daylight:mcp-status', event => { verify(event); return { state: 'missing', registered: false, toolCount: 0, autoConnect: false, canConfigure: false, preview: true }; });
+  ipcMain.handle('daylight:claude-status', event => { verify(event); return { state: 'missing', registered: false, toolCount: 0, autoConnect: false, canConfigure: false, preview: true }; });
   ipcMain.handle('daylight:notification-status', event => { verify(event); return { state: 'disabled', mode: 'preview', supported: false, canOpenSettings: false }; });
   for (const channel of ['daylight:update-status', 'daylight:check-updates', 'daylight:download-update']) {
     ipcMain.handle(channel, event => { verify(event); return { state: 'disabled', mode: 'disabled', revision: 0 }; });
   }
   ipcMain.handle('daylight:update-editing', (event, value) => { verify(event); assert.equal(typeof value, 'boolean'); return { editing: value }; });
-  for (const channel of ['daylight:install-mcp','daylight:check-mcp','daylight:set-mcp-auto-connect','daylight:set-auto-launch','daylight:open-data-folder','daylight:test-notification','daylight:notification-settings']) {
+  for (const channel of ['daylight:install-mcp', 'daylight:connect-claude', 'daylight:check-claude', 'daylight:set-claude-auto-connect','daylight:check-mcp','daylight:set-mcp-auto-connect','daylight:set-auto-launch','daylight:open-data-folder','daylight:test-notification','daylight:notification-settings']) {
     ipcMain.handle(channel, event => { verify(event); throw new Error('System changes are disabled in this public demo.'); });
   }
   await window.loadURL('about:blank');

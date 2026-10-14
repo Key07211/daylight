@@ -32,6 +32,7 @@ From v0.4.0, the installed app checks for updates at startup and every six hours
 | Desktop controls | Always-on-top, tray controls, English / Chinese, reduced motion, and JSON export |
 | Updates | Automatic version checks, a blue update dot beside Pin, download progress, and automatic install/restart after a requested download |
 | Codex MCP | Let Codex read and manage tasks, notifications, and run results through 14 tools |
+| Claude MCP | The same 14 tools for Claude Code and Claude Desktop, connected automatically from Settings |
 | Codex scheduling | Give a task a prompt, working directory, execution time, and repeat rule for the local `codex exec` command |
 
 Weather uses network-based location and Open-Meteo; you can correct the city manually. The weather city's time zone does not change the day/night schedule. Tasks work offline, while weather uses cached information or becomes unavailable. Reminders and scheduled runs need the app running and the computer awake.
@@ -49,6 +50,14 @@ Refresh the connection in Codex's MCP settings, or restart Codex and open a new 
 **Schedule Codex from the list.** Enable automatic execution in a task's details, then set its working directory, prompt, and run time. The default sandbox is read-only; workspace writes are optional. Scheduling needs the Codex CLI, a valid sign-in, and internet access, and uses your Codex account allowance. It is separate from Codex desktop Automations. Installing Daylight does not create AI jobs.
 
 MCP edits take effect directly, without the app's confirmation dialogs, so identify the target task clearly. Daylight listens only on the local loopback address and does not sync across devices.
+
+## Connect with Claude
+
+The installed app also registers Daylight with **Claude Code** (`~/.claude.json`, user scope) and **Claude Desktop** (`claude_desktop_config.json`) when they are installed, then verifies the same handshake and read-only status. Find the Claude card under Codex in **Settings & connections** (bottom left). Start a new Claude Code session, or fully quit and reopen Claude Desktop, then ask:
+
+> Using Daylight, add “Review reading notes” due tomorrow at 8 PM with a 7:30 PM reminder.
+
+Only the `daylight` entry is added or updated; other servers and settings are kept, and a backup is written beside the file first. See the [MCP guide](docs/MCP_GUIDE.md#连接-claude-code-与-claude-desktop).
 
 ## Product demo
 

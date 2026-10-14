@@ -49,6 +49,7 @@
       "desktop/preload.cjs",
       "desktop/codex-path.cjs",
       "desktop/mcp-connection.cjs",
+      "desktop/claude-connection.cjs",
       "desktop/mcp-controller.cjs",
       "desktop/mcp-migration.cjs",
       "desktop/assets/**/*",
