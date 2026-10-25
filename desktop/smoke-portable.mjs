@@ -157,7 +157,7 @@ try {
   assert.equal(report.windowSecurity?.sandbox, true);
   assert.deepEqual(Object.keys(report.interfaceChecks?.checks || {}).sort(), expectedChecks, 'Every current UI check must run in the portable payload');
   for (const [name, passed] of Object.entries(report.interfaceChecks.checks)) assert.equal(passed, true, `UI check failed: ${name}`);
-  assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setAutoLaunch', 'openDataFolder',
+  assert.deepEqual(report.bridgeMethods, ['claimStartup', 'getInfo', 'setTheme', 'setAlwaysOnTop', 'setCloseAction', 'setAutoLaunch', 'openDataFolder',
     'getNotificationStatus', 'testNotification', 'openNotificationSettings', 'onNotificationStatus',
     'installMcp', 'getMcpStatus', 'checkMcp', 'setMcpAutoConnect', 'onMcpStatus',
     'connectClaude', 'getClaudeStatus', 'checkClaude', 'setClaudeAutoConnect', 'onClaudeStatus',
@@ -165,6 +165,7 @@ try {
   assert.deepEqual(report.updateSafety, { disabledInSmoke: true, noUpdateWork: true, invalidEditingRejected: true });
   assert.deepEqual(report.notificationSafety, { disabledInSmoke: true, noToastSent: true, noSettingsOpened: true, invalidLanguageRejected: true });
   assert.deepEqual(report.pinning, { initialPinStateMatches: true, invalidPinRejected: true, invalidPinPreservedState: true, pinEnabled: true, pinDisabled: true });
+  assert.deepEqual(report.closing, { closeDefaultsToTray: true, invalidCloseActionRejected: true, closeQuitSaved: true, closeTrayRestored: true });
   assert.equal(JSON.parse(await fs.readFile(preferencesPath, 'utf8')).alwaysOnTop, false);
   const store = JSON.parse(await fs.readFile(path.join(dataDir, 'store.json'), 'utf8'));
   assert.deepEqual(store.tasks, [], 'UI fixtures must be removed from the isolated store');
