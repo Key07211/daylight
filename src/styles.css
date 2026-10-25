@@ -2935,3 +2935,10 @@ input[type="checkbox"] { width: 16px; height: 16px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.close-options {
+  flex: 0 0 auto;
+}
+.close-options button {
+  flex: 0 0 auto;
+  padding-inline: 12px;
+}

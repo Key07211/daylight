@@ -75,17 +75,27 @@ function autoLaunch() {
   return app.isPackaged && !smoke && app.getLoginItemSettings({ path: process.execPath, args: ['--hidden'] }).openAtLogin;
 }
 
-function savedAlwaysOnTop() {
+function readWindowPreferences() {
   try {
-    return JSON.parse(fs.readFileSync(windowPreferencesPath, 'utf8')).alwaysOnTop === true;
-  } catch { return false; }
+    const saved = JSON.parse(fs.readFileSync(windowPreferencesPath, 'utf8'));
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch { return {}; }
 }
 
-function saveAlwaysOnTop(alwaysOnTop) {
+function savedAlwaysOnTop() {
+  return readWindowPreferences().alwaysOnTop === true;
+}
+
+// 'tray' keeps reminders and schedules running after the window closes; 'quit' stops the app.
+function savedCloseAction() {
+  return readWindowPreferences().closeAction === 'quit' ? 'quit' : 'tray';
+}
+
+function saveWindowPreferences(changes) {
   fs.mkdirSync(path.dirname(windowPreferencesPath), { recursive: true });
   const temporaryPath = `${windowPreferencesPath}.${process.pid}.tmp`;
   try {
-    fs.writeFileSync(temporaryPath, JSON.stringify({ alwaysOnTop }, null, 2), { mode: 0o600 });
+    fs.writeFileSync(temporaryPath, JSON.stringify({ ...readWindowPreferences(), ...changes }, null, 2), { mode: 0o600 });
     fs.renameSync(temporaryPath, windowPreferencesPath);
   } finally {
     if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath);
@@ -109,7 +119,7 @@ function setupIpc() {
   ipcMain.handle('daylight:get-info', event => {
     verifiedSender(event);
     return { version: app.getVersion(), dataPath: dataDir, autoLaunch: Boolean(autoLaunch()),
-      alwaysOnTop: window.isAlwaysOnTop(), isPackaged: app.isPackaged };
+      alwaysOnTop: window.isAlwaysOnTop(), closeAction: savedCloseAction(), isPackaged: app.isPackaged };
   });
   ipcMain.handle('daylight:set-always-on-top', (event, enabled) => {
     verifiedSender(event);
@@ -118,12 +128,18 @@ function setupIpc() {
     try {
       window.setAlwaysOnTop(enabled);
       const alwaysOnTop = window.isAlwaysOnTop();
-      saveAlwaysOnTop(alwaysOnTop);
+      saveWindowPreferences({ alwaysOnTop });
       return { alwaysOnTop };
     } catch (error) {
       window.setAlwaysOnTop(previous);
       throw error;
     }
+  });
+  ipcMain.handle('daylight:set-close-action', (event, action) => {
+    verifiedSender(event);
+    if (action !== 'tray' && action !== 'quit') throw new Error('Close action must be tray or quit.');
+    saveWindowPreferences({ closeAction: action });
+    return { closeAction: savedCloseAction() };
   });
   ipcMain.handle('daylight:set-auto-launch', (event, enabled) => {
     verifiedSender(event);
@@ -220,7 +236,9 @@ async function createWindow() {
   window.webContents.on('will-redirect', (event, url) => { if (!localUrl(url)) event.preventDefault(); });
   window.webContents.on('will-attach-webview', event => event.preventDefault());
   window.on('close', event => {
-    if (!quitting && tray) { event.preventDefault(); window.hide(); }
+    if (quitting) return;
+    if (savedCloseAction() === 'quit') { event.preventDefault(); window.hide(); app.quit(); return; }
+    if (tray) { event.preventDefault(); window.hide(); }
   });
 
   tray = new Tray(icon.resize({ width: 32, height: 32 }));
