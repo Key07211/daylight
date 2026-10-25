@@ -140,7 +140,7 @@ function IconButton({ label, children, onClick, ...rest }) {
     </button>
   );
 }
-function Modal({ title, subtitle, children, onClose, wide = false, closeDisabled = false, className = "", returnFocus }) {
+function Modal({ title, subtitle, children, onClose, wide = false, closeDisabled = false, className = "", returnFocus, fallbackFocus }) {
   const { t } = useI18n();
   const ref = useRef(null);
   const closeRef = useRef(onClose);
@@ -205,8 +205,10 @@ function Modal({ title, subtitle, children, onClose, wide = false, closeDisabled
     return () => {
       clearTimeout(closeTimer.current);
       document.removeEventListener("keydown", key);
-      if (prev?.isConnected && !prev.closest('[inert]')) prev.focus();
-      else document.querySelector('[data-dialog-return-focus]')?.focus();
+      // preventScroll keeps the list where it was; a plain focus() on the header button jumps to the top.
+      const usable = (el) => el?.isConnected && !el.closest('[inert]');
+      const target = usable(prev) ? prev : (fallbackFocus?.().find(usable) || document.querySelector('[data-dialog-return-focus]'));
+      target?.focus({ preventScroll: true });
     };
   }, []);
   return (
@@ -408,7 +410,12 @@ function App() {
   }
   async function toggle(task) {
     if (!task.completed) {
-      if (!editor && !modal) setModal({ type: "complete", task, returnFocus: document.activeElement });
+      if (editor || modal) return;
+      // The completed row usually leaves the list, so remember its neighbours to hand focus to.
+      const rows = [...document.querySelectorAll(".task-row")];
+      const index = rows.findIndex((row) => row.dataset.taskId === String(task.id));
+      const neighbours = index < 0 ? [] : [rows[index + 1], rows[index - 1]].filter(Boolean).map((row) => row.dataset.taskId);
+      setModal({ type: "complete", task, returnFocus: document.activeElement, neighbours });
       return;
     }
     try {
@@ -1214,6 +1221,7 @@ function App() {
           title={t("确认完成任务")}
           className="completion-confirm"
           returnFocus={modal.returnFocus}
+          fallbackFocus={() => modal.neighbours.map((id) => document.querySelector(`.task-row[data-task-id="${CSS.escape(id)}"] .task-checkbox`))}
           closeDisabled={completionBusy}
           onClose={() => {
             if (!completionPending.current) setModal(null);
