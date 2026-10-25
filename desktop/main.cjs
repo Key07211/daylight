@@ -288,6 +288,18 @@ async function runSmoke() {
   const unpinned = await window.webContents.executeJavaScript('window.daylightDesktop.setAlwaysOnTop(false)');
   const pinDisabled = unpinned.alwaysOnTop === false && !window.isAlwaysOnTop() && !savedAlwaysOnTop();
   const pinning = { initialPinStateMatches, invalidPinRejected, invalidPinPreservedState, pinEnabled, pinDisabled };
+  const closeDefaultsToTray = renderer.info.closeAction === 'tray' && savedCloseAction() === 'tray';
+  const invalidCloseActionRejected = await window.webContents.executeJavaScript(`(async () => {
+    try { await window.daylightDesktop.setCloseAction('exit'); return false; }
+    catch { return true; }
+  })()`) && savedCloseAction() === 'tray';
+  const quitChosen = await window.webContents.executeJavaScript("window.daylightDesktop.setCloseAction('quit')");
+  const closeQuitSaved = quitChosen.closeAction === 'quit' && savedCloseAction() === 'quit'
+    && readWindowPreferences().alwaysOnTop === savedAlwaysOnTop() && 'alwaysOnTop' in readWindowPreferences();
+  // Back to the tray before the UI checks so nothing in them can quit the smoke run.
+  const trayChosen = await window.webContents.executeJavaScript("window.daylightDesktop.setCloseAction('tray')");
+  const closeTrayRestored = trayChosen.closeAction === 'tray' && savedCloseAction() === 'tray';
+  const closing = { closeDefaultsToTray, invalidCloseActionRejected, closeQuitSaved, closeTrayRestored };
   const updateSafety = await window.webContents.executeJavaScript(`(async () => {
     const status = await window.daylightDesktop.getUpdateStatus();
     const checked = await window.daylightDesktop.checkForUpdates();
@@ -311,14 +323,14 @@ async function runSmoke() {
   const ok = response.ok && Array.isArray(state.tasks) && Boolean(state.csrfToken)
     && renderer.nodeUnavailable && rendererLoaded && Boolean(renderer.info.dataPath)
     && renderer.pinButtonAvailable && renderer.cornerNotesRemoved
-    && Object.values(pinning).every(Boolean) && Object.values(updateSafety).every(Boolean)
+    && Object.values(pinning).every(Boolean) && Object.values(closing).every(Boolean) && Object.values(updateSafety).every(Boolean)
     && Object.values(notificationSafety).every(Boolean) && Object.values(interfaceChecks.checks).every(Boolean);
   const screenshotPath = smokeOutput.replace(/\.json$/i, '') + '.png';
   fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
   fs.writeFileSync(screenshotPath, (await window.webContents.capturePage()).toPNG());
   writeSmoke({ ok, origin, apiAvailable: response.ok, rendererLoaded,
     title: renderer.title, renderedText: renderer.content.slice(0, 2000), nativeInfo: renderer.info, nodeUnavailable: renderer.nodeUnavailable,
-    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, interfaceChecks, updateSafety, notificationSafety,
+    bridgeMethods: renderer.bridgeMethods, codex: state.codex, pinning, closing, interfaceChecks, updateSafety, notificationSafety,
     pinButtonAvailable: renderer.pinButtonAvailable, cornerNotesRemoved: renderer.cornerNotesRemoved, screenshotPath,
     windowSecurity: window.webContents.getLastWebPreferences(), trayAvailable: Boolean(tray),
     notificationsEnabled: state.settings.desktopNotifications, packaged: app.isPackaged });
