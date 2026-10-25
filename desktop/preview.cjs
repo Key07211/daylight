@@ -76,7 +76,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('daylight:set-always-on-top', (event, value) => { verify(event); if (typeof value !== 'boolean') throw new Error('Invalid pin'); window.setAlwaysOnTop(value); return { alwaysOnTop: value }; });
   ipcMain.handle('daylight:mcp-status', event => { verify(event); return { state:'missing',registered:false,toolCount:0,autoConnect:false,canConfigure:false,preview:true }; });
   ipcMain.handle('daylight:claude-status', event => { verify(event); return { state:'missing',registered:false,toolCount:0,autoConnect:false,canConfigure:false,preview:true }; });
-  for (const channel of ['daylight:set-auto-launch', 'daylight:install-mcp', 'daylight:connect-claude', 'daylight:check-claude', 'daylight:set-claude-auto-connect', 'daylight:open-data-folder']) {
+  for (const channel of ['daylight:set-auto-launch', 'daylight:set-close-action', 'daylight:install-mcp', 'daylight:connect-claude', 'daylight:check-claude', 'daylight:set-claude-auto-connect', 'daylight:open-data-folder']) {
     ipcMain.handle(channel, event => { verify(event); throw new Error('界面预览不修改正式应用的系统设置。'); });
   }
   await window.loadURL(origin);

@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('daylightDesktop', Object.freeze({
   getInfo: () => ipcRenderer.invoke('daylight:get-info'),
   setTheme: theme => ipcRenderer.invoke('daylight:set-theme', theme),
   setAlwaysOnTop: enabled => ipcRenderer.invoke('daylight:set-always-on-top', enabled),
+  setCloseAction: action => ipcRenderer.invoke('daylight:set-close-action', action),
   setAutoLaunch: enabled => ipcRenderer.invoke('daylight:set-auto-launch', enabled),
   openDataFolder: () => ipcRenderer.invoke('daylight:open-data-folder'),
   getNotificationStatus: () => ipcRenderer.invoke('daylight:notification-status'),

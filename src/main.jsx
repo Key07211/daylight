@@ -1412,7 +1412,39 @@ function App() {
                     <span />
                   </button>
                 </div>
-                <p className="hint">{t("关闭窗口会收起到系统托盘。右键托盘图标选择「退出」才会停止提醒和调度。")}</p>
+                <div className="setting-row close-action-row">
+                  <div>
+                    <strong>{t("关闭窗口时", "When closing the window")}</strong>
+                    <p>{desktop.closeAction === "quit"
+                      ? t("直接退出程序，提醒和调度会一起停止。", "Quit Daylight. Reminders and schedules stop too.")
+                      : t("最小化到系统托盘，提醒和调度继续运行。", "Minimize to the system tray. Reminders and schedules keep running.")}</p>
+                  </div>
+                  <div className="language-options close-options" role="group" aria-label={t("关闭窗口时", "When closing the window")}>
+                    {[["tray", t("最小化到托盘", "Minimize to tray")], ["quit", t("退出程序", "Quit")]].map(([action, label]) => (
+                      <button
+                        key={action}
+                        type="button"
+                        data-close-action={action}
+                        aria-pressed={(desktop.closeAction || "tray") === action}
+                        onClick={async () => {
+                          if ((desktop.closeAction || "tray") === action) return;
+                          try {
+                            const result = await window.daylightDesktop.setCloseAction(action);
+                            setDesktop({ ...desktop, ...result });
+                            message(t("关闭设置已保存", "Close preference saved"));
+                          } catch (e) {
+                            message(e.message, "error");
+                          }
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="hint">{desktop.closeAction === "quit"
+                  ? t("关闭窗口会退出 Daylight。需要后台提醒时，请选「最小化到托盘」。", "Closing the window quits Daylight. Choose Minimize to tray to keep background reminders.")
+                  : t("关闭窗口会收起到系统托盘。右键托盘图标选择「退出」才会停止提醒和调度。")}</p>
               </section>
             )}
             <NotificationSettings enabled={!!data.settings?.desktopNotifications}
