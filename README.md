@@ -4,7 +4,7 @@
 
 A Windows task app that follows the light, weather, and rhythm of your day. Plan locally, enjoy liquid glass and changing skies, and connect your task list to Codex.
 
-**Windows x64 · v0.5.1 · English / 中文 · Local storage**
+**Windows x64 · v0.5.2 · English / 中文 · Local storage**
 
 [Download](https://github.com/Key07211/daylight/releases/latest) · [English demo](https://key07211.github.io/daylight/demo.html?lang=en) · [中文演示](https://key07211.github.io/daylight/demo.html?lang=zh) · [User guide (中文)](docs/USER_GUIDE.md) · [MCP guide (中文)](docs/MCP_GUIDE.md)
 

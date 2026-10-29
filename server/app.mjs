@@ -208,7 +208,13 @@ export async function createApp(options = {}) {
     },
     async close() {
       scheduler.stop();
-      if (listening) await new Promise(resolve => { server.close(resolve); server.closeIdleConnections(); });
+      if (listening) await new Promise(resolve => {
+        server.close(resolve);
+        server.closeIdleConnections();
+        // Once the server stops listening, Node no longer times out a connection stuck
+        // mid-request, so close() would wait forever. Cut everything after a short grace.
+        setTimeout(() => server.closeAllConnections(), 1000).unref();
+      });
       listening = false;
     },
   };
