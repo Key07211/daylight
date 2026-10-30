@@ -23,6 +23,9 @@ const profileDir = smoke
 app.setPath('userData', profileDir);
 const dataDir = path.join(app.getPath('userData'), 'data');
 const windowPreferencesPath = path.join(app.getPath('userData'), 'window-preferences.json');
+const shutdownLogPath = path.join(app.getPath('userData'), 'logs', 'shutdown.log');
+// Quitting must never leave a process holding the single-instance lock.
+const shutdownDeadlineMs = 10000;
 const parsedPort = Number(process.env.DAYLIGHT_PORT || 4317);
 const port = Number.isInteger(parsedPort) && parsedPort >= 1024 && parsedPort <= 65535 ? parsedPort : 4317;
 const allowedExternalHosts = new Set(['learn.chatgpt.com', 'developers.openai.com', 'www.figma.com', 'www.electronjs.org']);
@@ -390,26 +393,53 @@ async function boot() {
 
 app.on('window-all-closed', () => { /* Tray keeps the local service available. */ });
 app.on('activate', showWindow);
+// Each quit step is logged so a stuck exit shows where it stopped.
+function logShutdown(step) {
+  try {
+    fs.mkdirSync(path.dirname(shutdownLogPath), { recursive: true });
+    if (fs.existsSync(shutdownLogPath) && fs.statSync(shutdownLogPath).size > 256 * 1024) fs.rmSync(shutdownLogPath);
+    fs.appendFileSync(shutdownLogPath, `${new Date().toISOString()} pid=${process.pid} ${step}\n`);
+  } catch { /* Logging must never block quitting. */ }
+}
+
 app.on('before-quit', event => {
   if (quitting) return;
   event.preventDefault();
   if (shutdownStarted) return;
   shutdownStarted = true;
+  logShutdown('quit requested');
+  setTimeout(() => {
+    logShutdown(`still running after ${shutdownDeadlineMs} ms; forcing exit`);
+    app.exit(0);
+  }, shutdownDeadlineMs);
   updates?.dispose();
   const hadRun = Boolean(service?.scheduler.activeRun);
-  Promise.resolve(service?.close()).catch(console.error).finally(async () => {
+  Promise.resolve(service?.close()).catch(error => logShutdown(`local service close failed: ${error.message}`)).finally(async () => {
+    logShutdown('local service closed');
     if (hadRun) await new Promise(resolve => setTimeout(resolve, 1000));
     desktopNotifications?.dispose();
     tray?.destroy();
     quitting = true;
+    logShutdown('closing windows');
     app.quit();
   });
 });
+app.on('will-quit', () => logShutdown('windows closed'));
+app.on('quit', (_event, code) => logShutdown(`quit (code ${code})`));
+
+function secondInstance() {
+  if (!shutdownStarted) { showWindow(); return; }
+  // A launch during a stuck quit: finish the old process and start a fresh one.
+  logShutdown('launched again while quitting; restarting');
+  app.relaunch({ execPath: process.env.PORTABLE_EXECUTABLE_FILE || process.execPath,
+    args: process.argv.slice(1).filter(arg => arg !== '--hidden') });
+  app.exit(0);
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.exit(0);
 } else {
-  app.on('second-instance', showWindow);
+  app.on('second-instance', secondInstance);
   boot().catch(async error => {
     const message = error.code === 'EADDRINUSE'
       ? `本地端口 ${port} 已被占用。请先退出已运行的 Daylight 网页服务或其他占用该端口的程序，然后重新打开。`

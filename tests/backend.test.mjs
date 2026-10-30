@@ -258,3 +258,20 @@ test('malformed persistence is reported without overwriting user data', async t 
   await assert.rejects(createApp({ dataDir: directory, codexInfo: { available: false, version: null } }), /malformed/);
   assert.equal(await fs.readFile(filename, 'utf8'), malformed);
 });
+
+test('closing the local service does not wait on a busy client connection', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'daylight-close-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const app = await createApp({ dataDir: directory, startScheduler: false, codexInfo: { available: false, version: null } });
+  const { port } = new URL(await app.listen(0));
+  // A request whose headers never finish keeps its connection busy until headersTimeout (15 s).
+  const net = await import('node:net');
+  const socket = net.connect(Number(port), '127.0.0.1');
+  t.after(() => socket.destroy());
+  await new Promise(resolve => socket.once('connect', resolve));
+  socket.write('GET /api/bootstrap HTTP/1.1\r\nHost: 127.0.0.1\r\n');
+  await new Promise(resolve => setTimeout(resolve, 50));
+  const started = Date.now();
+  await app.close();
+  assert.ok(Date.now() - started < 5000, `close took ${Date.now() - started} ms`);
+});
