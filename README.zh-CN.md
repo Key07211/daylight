@@ -65,6 +65,8 @@ MCP 的任务修改直接生效，不经过应用界面的确认弹窗；调用�
 
 离线查看时，从 Releases 下载 `Daylight-Demo-<version>.zip`，解压后用浏览器打开 `docs/demo.html`，并保留随附文件的目录结构。本仓库也包含[演示页面](docs/demo.html)与[演示说明](docs/DEMO.zh-CN.md)。
 
+[史莱姆实验室](https://key07211.github.io/daylight/slime.html?lang=zh)是一个可交互的小彩蛋：基于粒子的流体史莱姆，可以拉扯、推挤和加料。可在史莱姆、果冻、蜂蜜与清水之间切换，调节粘度、弹性、流动与重力，并打开模型视图查看粒子和弹簧。也可以离线打开 [`docs/slime.html`](docs/slime.html)。
+
 原始 [Figma v1 设计稿](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) 保留了早期构思。当前视觉与天气动效以应用实装为准，见[设计说明](design/day-night-spec.md)。
 
 ## 数据与隐私

@@ -65,6 +65,8 @@ Explore the animated walkthrough in [English](https://key07211.github.io/dayligh
 
 For offline viewing, download `Daylight-Demo-<version>.zip` from Releases, extract it, and open `docs/demo.html` in a browser. Keep the accompanying files together. The repository also includes the [demo page](docs/demo.html) and [demo notes](docs/DEMO.md).
 
+The [slime lab](https://key07211.github.io/daylight/slime.html) is a small interactive extra: a particle-based fluid slime you can pull, push, and pour. Switch between slime, jelly, honey, and water, adjust viscosity, elasticity, flow, and gravity, and turn on the model view to see the particles and springs. It also opens offline from [`docs/slime.html`](docs/slime.html).
+
 The original [Figma v1 design](https://www.figma.com/design/UHEyr1qqi1WspOuH8QJVvP) records the early concept. Current visuals and motion are implemented in the app; see the [design notes](design/day-night-spec.md).
 
 ## Data and privacy

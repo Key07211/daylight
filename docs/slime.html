@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Daylight slime lab: an interactive particle-based viscoelastic fluid you can pull, push, and pour.">
+<title>Daylight · Slime lab</title>
+<style>
+:root{--paper:#f1f3eb;--ink:#233e35;--soft:#698074;--line:#647f7029;--glass:#ffffff70;--accent:#426e5b;--wash:#e1e9d9;--shadow:#3d605319;--glow:#fbe9b591;--tank-a:#f8f9f1;--tank-b:#dfe9dc;color-scheme:light;font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-synthesis:none}
+html[data-theme=night]{--paper:#111d2a;--ink:#e0eaf3;--soft:#9badbf;--line:#b6cae02c;--glass:#2233488c;--accent:#b8d6ec;--wash:#243951;--shadow:#00000040;--glow:#53669c40;--tank-a:#16263a;--tank-b:#0d1826;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.5;transition:background .6s,color .4s}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 17% 10%,var(--glow),transparent 42%),radial-gradient(ellipse at 93% 59%,#a8cfc335,transparent 46%)}
+button,a{-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+button:active{transform:scale(.97)}
+a{color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+[hidden]{display:none!important}
+.shell{max-width:1400px;min-height:100%;margin:auto;padding:0 28px 24px;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.wordmark{display:flex;align-items:center;gap:11px;text-decoration:none;font-size:20px;font-weight:650;letter-spacing:-.5px;min-width:0}
+.wordmark small{font-size:13px;font-weight:450;color:var(--soft);letter-spacing:0;white-space:nowrap}
+.brand-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:12px;background:linear-gradient(140deg,#ffffffa8,#d6e3d866);box-shadow:inset 1px 1px 0 #ffffffc9,0 3px 12px var(--shadow);color:#62836b}
+.brand-icon svg{width:24px;height:24px}
+.top-right{display:flex;gap:10px;align-items:center}
+.pill{display:flex;padding:3px;border:1px solid var(--line);border-radius:99px;gap:2px;background:var(--glass)}
+.pill button{padding:5px 12px;color:var(--soft);border:0;background:transparent;border-radius:99px;font-size:12px;white-space:nowrap}
+.pill button[aria-pressed=true]{color:var(--ink);background:var(--paper);box-shadow:0 1px 6px var(--shadow)}
+.lab{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 304px;gap:20px;padding-top:20px;min-height:0}
+.stage{position:relative;min-height:440px;height:calc(100vh - 122px);border-radius:20px;border:1px solid var(--line);background:linear-gradient(170deg,var(--tank-a),var(--tank-b));box-shadow:0 22px 56px var(--shadow),inset 0 1px 0 #ffffff8f;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.stage.is-holding{cursor:grabbing}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tools{position:absolute;top:12px;left:12px;z-index:2;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.readout{position:absolute;right:16px;top:20px;z-index:2;margin:0;font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums;pointer-events:none}
+.hint{position:absolute;left:50%;top:60px;transform:translateX(-50%);z-index:1;margin:0;padding:6px 14px;border-radius:99px;font-size:12px;color:var(--soft);background:var(--glass);border:1px solid var(--line);white-space:nowrap;pointer-events:none;transition:opacity .5s}
+.hint.is-gone{opacity:0}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{border:1px solid var(--line);background:var(--glass);border-radius:16px;padding:14px 16px;box-shadow:inset 1px 1px 0 #ffffff5c,0 6px 18px var(--shadow)}
+.card h2{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--soft);letter-spacing:.02em}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.chips button{padding:8px 4px;border:1px solid var(--line);border-radius:11px;background:transparent;font-size:12.5px;white-space:nowrap}
+.chips button:hover{background:var(--wash)}
+.chips button[aria-pressed=true]{background:var(--paper);border-color:var(--accent);box-shadow:0 1px 6px var(--shadow);font-weight:600}
+.slider{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;margin-top:10px}
+.slider:first-of-type{margin-top:0}
+.slider label{font-size:13px}
+.slider output{font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums}
+.slider input{grid-column:1/-1;width:100%;margin:2px 0 0;accent-color:var(--accent)}
+.slider.is-idle{opacity:.45}
+.swatches{display:flex;gap:10px}
+.swatches button{width:28px;height:28px;border-radius:50%;border:2px solid transparent;padding:0;background:radial-gradient(circle at 34% 30%,var(--a),var(--b));box-shadow:0 2px 8px var(--shadow)}
+.swatches button[aria-pressed=true]{border-color:var(--ink)}
+.switches{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.switches label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.switches input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.actions button{padding:8px 4px;border:1px solid var(--line);border-radius:99px;background:var(--glass);font-size:12.5px;white-space:nowrap}
+.actions button:hover{background:var(--wash)}
+details.card summary{cursor:pointer;font-size:13px;font-weight:600;list-style-position:outside;margin-left:16px}
+details.card ol{margin:10px 0 0;padding-left:18px;font-size:12.5px;color:var(--soft)}
+details.card li{margin-bottom:6px}
+details.card li b{color:var(--ink);font-weight:600}
+details.card p{margin:8px 0 0;font-size:11.5px;color:var(--soft)}
+@media(max-width:900px){
+  .shell{padding:0 14px 20px}
+  .topbar{padding:14px 0}
+  .wordmark{font-size:17px;gap:8px}
+  .wordmark small{font-size:12px}
+  .brand-icon{width:29px;height:29px}
+  .pill button{padding:4px 9px;font-size:11px}
+  .lab{display:flex;flex-direction:column;gap:14px;padding-top:14px}
+  .stage{height:56vh;min-height:330px;border-radius:16px}
+  .hint{top:56px}
+  .readout{right:12px;top:19px;font-size:10px}
+}
+@media(max-width:420px){.wordmark small{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+@media(forced-colors:active){.stage,.card,.chips button,.actions button{border:1px solid CanvasText}.chips button[aria-pressed=true],.pill button[aria-pressed=true]{outline:2px solid Highlight}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="topbar">
+  <a class="wordmark" href="demo.html" aria-label="Daylight"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="5.3" fill="currentColor" opacity=".75"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M16 3v4m0 18v4M3 16h4m18 0h4M6.8 6.8l2.8 2.8m12.8 12.8 2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8"/></g></svg></span>Daylight <small data-i18n="subtitle">Slime lab</small></a>
+  <div class="top-right">
+    <div class="pill" role="group" data-i18n-label="themeGroup" aria-label="Theme"><button data-theme-choice="day" aria-pressed="true" data-i18n="day">Day</button><button data-theme-choice="night" aria-pressed="false" data-i18n="night">Night</button></div>
+    <div class="pill" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">English</button><button data-lang="zh" aria-pressed="false">中文</button></div>
+  </div>
+</header>
+<main class="lab">
+  <section class="stage" id="stage" data-i18n-label="stageLabel" aria-label="Slime tank">
+    <canvas id="surface" aria-hidden="true"></canvas>
+    <canvas id="overlay" aria-hidden="true"></canvas>
+    <div class="pill tools" role="group" data-i18n-label="toolGroup" aria-label="Tool">
+      <button data-tool="grab" aria-pressed="true" data-i18n="toolGrab">Pull</button>
+      <button data-tool="push" aria-pressed="false" data-i18n="toolPush">Push</button>
+      <button data-tool="pour" aria-pressed="false" data-i18n="toolPour">Pour</button>
+    </div>
+    <p class="hint" id="hint" data-i18n="hint">Drag the slime to stretch it</p>
+    <p class="readout" id="readout"></p>
+  </section>
+  <aside class="panel" data-i18n-label="panelLabel" aria-label="Controls">
+    <div class="card">
+      <h2 data-i18n="material">Material</h2>
+      <div class="chips" id="presets" role="group" data-i18n-label="material" aria-label="Material">
+        <button data-preset="slime" aria-pressed="true" data-i18n="presetSlime">Slime</button>
+        <button data-preset="jelly" aria-pressed="false" data-i18n="presetJelly">Jelly</button>
+        <button data-preset="honey" aria-pressed="false" data-i18n="presetHoney">Honey</button>
+        <button data-preset="water" aria-pressed="false" data-i18n="presetWater">Water</button>
+      </div>
+    </div>
+    <div class="card" id="sliders">
+      <div class="slider"><label for="viscosity" data-i18n="viscosity">Viscosity</label><output for="viscosity"></output><input id="viscosity" type="range" min="0" max="100" step="1"></div>
+      <div class="slider"><label for="elasticity" data-i18n="elasticity">Elasticity</label><output for="elasticity"></output><input id="elasticity" type="range" min="0" max="100" step="1"></div>
+      <div class="slider"><label for="plasticity" data-i18n="plasticity">Flow</label><output for="plasticity"></output><input id="plasticity" type="range" min="0" max="100" step="1"></div>
+      <div class="slider"><label for="gravity" data-i18n="gravity">Gravity</label><output for="gravity"></output><input id="gravity" type="range" min="0" max="100" step="1"></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="look">Look</h2>
+      <div class="swatches" id="swatches" role="group" data-i18n-label="look" aria-label="Look"></div>
+      <div class="switches">
+        <label><input type="checkbox" id="show-face" checked><span data-i18n="face">Face</span></label>
+        <label><input type="checkbox" id="show-model"><span data-i18n="modelView">Model view</span></label>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="toss" data-i18n="toss">Toss</button>
+      <button id="pause" aria-pressed="false" data-i18n="pause">Pause</button>
+      <button id="reset" data-i18n="reset">Reset</button>
+    </div>
+    <details class="card">
+      <summary data-i18n="howTitle">How the model works</summary>
+      <ol>
+        <li data-i18n-html="how1"></li>
+        <li data-i18n-html="how2"></li>
+        <li data-i18n-html="how3"></li>
+        <li data-i18n-html="how4"></li>
+        <li data-i18n-html="how5"></li>
+      </ol>
+      <p data-i18n="howSource"></p>
+    </details>
+  </aside>
+</main>
+</div>
+<script src="slime-sim.js"></script>
+<script>
+(() => {
+'use strict';
+const { createSlimeSim, PRESETS } = window.SlimeSim;
+
+const strings = {
+  title: ['Daylight · 史莱姆实验室', 'Daylight · Slime lab'],
+  subtitle: ['史莱姆实验室', 'Slime lab'],
+  themeGroup: ['主题', 'Theme'], day: ['日光', 'Day'], night: ['夜晚', 'Night'],
+  stageLabel: ['史莱姆水槽', 'Slime tank'], panelLabel: ['参数', 'Controls'],
+  toolGroup: ['工具', 'Tool'], toolGrab: ['拉扯', 'Pull'], toolPush: ['推挤', 'Push'], toolPour: ['加料', 'Pour'],
+  hintGrab: ['按住史莱姆拖动，把它拉长', 'Drag the slime to stretch it'],
+  hintPush: ['按住并移动，把它推开', 'Hold and move to push it around'],
+  hintPour: ['按住空白处，倒入更多史莱姆', 'Hold to pour in more slime'],
+  material: ['材质', 'Material'],
+  presetSlime: ['史莱姆', 'Slime'], presetJelly: ['果冻', 'Jelly'], presetHoney: ['蜂蜜', 'Honey'], presetWater: ['清水', 'Water'],
+  viscosity: ['粘度', 'Viscosity'], elasticity: ['弹性', 'Elasticity'], plasticity: ['流动', 'Flow'], gravity: ['重力', 'Gravity'],
+  look: ['外观', 'Look'], face: ['表情', 'Face'], modelView: ['模型视图', 'Model view'],
+  colorMoss: ['青苔', 'Moss'], colorPeach: ['蜜桃', 'Peach'], colorSky: ['晴空', 'Sky'], colorGrape: ['葡萄', 'Grape'], colorSun: ['日光', 'Sun'],
+  toss: ['抛一下', 'Toss'], pause: ['暂停', 'Pause'], play: ['继续', 'Play'], reset: ['重置', 'Reset'],
+  particles: ['粒子', 'particles'], springs: ['弹簧', 'springs'],
+  howTitle: ['模型原理', 'How the model works'],
+  how1: ['<b>粒子</b>：史莱姆由几百个粒子组成，每一步只与半径 h 内的邻居相互作用，邻居用均匀网格查找。', '<b>Particles.</b> The slime is a few hundred particles. Each step, a particle only interacts with neighbours within a radius h, found with a uniform grid.'],
+  how2: ['<b>双密度松弛</b>：远程压力把密度拉回静止值，带来内聚力和表面张力；近程压力阻止粒子挤成一团。', '<b>Double density relaxation.</b> A far pressure pulls density back to its rest value, giving cohesion and surface tension. A near pressure keeps particles from clumping.'],
+  how3: ['<b>粘度</b>：相邻粒子沿连线方向交换冲量，速度逐渐趋同。粘度越高，流动越慢。', '<b>Viscosity.</b> Neighbours trade impulses along the line between them, so their velocities even out. More viscosity means slower flow.'],
+  how4: ['<b>弹簧与塑性</b>：接触的粒子连上弹簧。形变在屈服范围内会回弹，超出后弹簧的静止长度缓慢蠕变，所以史莱姆能拉丝、塌落、断开再融合。', '<b>Springs and plasticity.</b> Touching particles bond with springs. Small strains spring back. Past the yield point the rest length creeps, so slime stretches into strands, slumps, tears, and merges again.'],
+  how5: ['<b>表面</b>：粒子叠加成密度场，取等值线作为轮廓，再按厚度和法线着色。打开“模型视图”可以看到粒子和弹簧。', '<b>Surface.</b> Particles are summed into a density field. Its contour is the outline, shaded by thickness and surface normal. Turn on Model view to see the particles and springs.'],
+  howSource: ['方法来自 Clavet、Beaudoin 与 Poulin 的《Particle-based Viscoelastic Fluid Simulation》（2005）。', 'Based on Clavet, Beaudoin and Poulin, “Particle-based Viscoelastic Fluid Simulation” (2005).'],
+};
+
+const palettes = [
+  { key: 'colorMoss', light: '#c6efae', deep: '#3d9a6c' },
+  { key: 'colorSun', light: '#ffeeb0', deep: '#eaa02f' },
+  { key: 'colorPeach', light: '#ffd3d6', deep: '#e66a8c' },
+  { key: 'colorSky', light: '#c2e8ff', deep: '#3d8ad6' },
+  { key: 'colorGrape', light: '#e2d2ff', deep: '#8660d4' },
+];
+
+const query = new URLSearchParams(location.search);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const surface = $('surface');
+const overlay = $('overlay');
+const draw = overlay.getContext('2d');
+
+const state = {
+  lang: query.get('lang') === 'zh' ? 'zh' : query.get('lang') === 'en' ? 'en' : (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en',
+  theme: query.get('theme') === 'night' || query.get('theme') === 'day' ? query.get('theme') : (() => { const hour = new Date().getHours(); return hour >= 7 && hour < 19 ? 'day' : 'night'; })(),
+  tool: 'grab', preset: 'slime', palette: 0,
+  paused: false, showFace: true, showModel: false,
+  pointer: { down: false, inside: false, x: 0, y: 0, id: null },
+  touched: false,
+};
+
+// ---------- simulation ----------
+const WORLD_AREA = 300000;
+const START_PARTICLES = 700;
+const STEP_SECONDS = 1 / 180;
+const sim = createSlimeSim({ maxParticles: 2000, seed: 20261110 });
+let worldWidth = 547;
+let worldHeight = 365;
+
+function resetSlime() {
+  sim.clear();
+  sim.spawnBlob(worldWidth * .5, Math.min(worldHeight * .42, worldHeight - 120), START_PARTICLES);
+  face.ready = false;
+}
+
+// ---------- sliders ----------
+const sliderMaps = {
+  viscosity: { toParam: (t) => .5 * t * t, toSlider: (v) => Math.sqrt(v / .5) },
+  elasticity: { toParam: (t) => .4 * t, toSlider: (v) => v / .4 },
+  plasticity: { toParam: (t) => .03 * t * t, toSlider: (v) => Math.sqrt(v / .03) },
+  gravity: { toParam: (t) => .04 * t, toSlider: (v) => v / .04 },
+};
+const sliderInputs = Object.keys(sliderMaps).map((name) => $(name));
+
+function syncSliders() {
+  for (const input of sliderInputs) {
+    const value = Math.round(Math.min(1, Math.max(0, sliderMaps[input.id].toSlider(sim.params[input.id]))) * 100);
+    input.value = String(value);
+    input.previousElementSibling.textContent = String(value);
+  }
+  $('plasticity').closest('.slider').classList.toggle('is-idle', sim.params.elasticity <= 0);
+}
+
+for (const input of sliderInputs) {
+  input.addEventListener('input', () => {
+    sim.params[input.id] = sliderMaps[input.id].toParam(Number(input.value) / 100);
+    state.preset = '';
+    syncSliders();
+    syncPressed();
+  });
+}
+
+// ---------- language, theme, buttons ----------
+function text(key) {
+  const entry = strings[key];
+  return entry ? entry[state.lang === 'zh' ? 0 : 1] : key;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = text('title');
+  for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = text(node.dataset.i18n);
+  for (const node of document.querySelectorAll('[data-i18n-html]')) node.innerHTML = text(node.dataset.i18nHtml);
+  for (const node of document.querySelectorAll('[data-i18n-label]')) node.setAttribute('aria-label', text(node.dataset.i18nLabel));
+  for (const node of document.querySelectorAll('#swatches button')) {
+    node.setAttribute('aria-label', text(node.dataset.key));
+    node.title = text(node.dataset.key);
+  }
+  $('hint').textContent = text({ grab: 'hintGrab', push: 'hintPush', pour: 'hintPour' }[state.tool]);
+  $('pause').textContent = text(state.paused ? 'play' : 'pause');
+  lastReadout = 0;
+}
+
+function syncPressed() {
+  const press = (selector, attribute, value) => {
+    for (const node of document.querySelectorAll(selector)) node.setAttribute('aria-pressed', String(node.getAttribute(attribute) === value));
+  };
+  press('[data-lang]', 'data-lang', state.lang);
+  press('[data-theme-choice]', 'data-theme-choice', state.theme);
+  press('[data-tool]', 'data-tool', state.tool);
+  press('[data-preset]', 'data-preset', state.preset);
+  press('#swatches button', 'data-index', String(state.palette));
+  $('pause').setAttribute('aria-pressed', String(state.paused));
+}
+
+const swatches = $('swatches');
+palettes.forEach((palette, index) => {
+  const button = document.createElement('button');
+  button.dataset.index = String(index);
+  button.dataset.key = palette.key;
+  button.style.setProperty('--a', palette.light);
+  button.style.setProperty('--b', palette.deep);
+  button.addEventListener('click', () => { state.palette = index; syncPressed(); });
+  swatches.append(button);
+});
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.lang) { state.lang = button.dataset.lang; applyLanguage(); }
+  else if (button.dataset.themeChoice) { state.theme = button.dataset.themeChoice; document.documentElement.dataset.theme = state.theme; }
+  else if (button.dataset.tool) { state.tool = button.dataset.tool; applyLanguage(); }
+  else if (button.dataset.preset) { state.preset = button.dataset.preset; sim.applyPreset(state.preset); syncSliders(); }
+  else if (button.id === 'toss') { sim.impulse((Math.random() - .5) * 3, -4.6); wake(); }
+  else if (button.id === 'pause') { state.paused = !state.paused; applyLanguage(); }
+  else if (button.id === 'reset') { resetSlime(); wake(); }
+  else return;
+  syncPressed();
+});
+
+$('show-face').addEventListener('change', (event) => { state.showFace = event.target.checked; });
+$('show-model').addEventListener('change', (event) => { state.showModel = event.target.checked; });
+
+function wake() {
+  if (!state.paused) return;
+  state.paused = false;
+  applyLanguage();
+  syncPressed();
+}
+
+// ---------- pointer ----------
+const GRAB_REACH = 30;
+const PUSH_REACH = 26;
+
+function toWorld(event) {
+  const rect = stage.getBoundingClientRect();
+  state.pointer.x = (event.clientX - rect.left) / rect.width * worldWidth;
+  state.pointer.y = (event.clientY - rect.top) / rect.height * worldHeight;
+}
+
+stage.addEventListener('pointerdown', (event) => {
+  if (event.target.closest('.tools') || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  event.preventDefault();
+  stage.setPointerCapture(event.pointerId);
+  toWorld(event);
+  const pointer = state.pointer;
+  pointer.down = true;
+  pointer.inside = true;
+  pointer.id = event.pointerId;
+  sim.pusher.radius = PUSH_REACH;
+  if (state.tool === 'grab' && sim.grab(pointer.x, pointer.y, GRAB_REACH) === 0) sim.pusher.active = true;
+  if (state.tool === 'push') sim.pusher.active = true;
+  sim.pusher.x = pointer.x;
+  sim.pusher.y = pointer.y;
+  stage.classList.add('is-holding');
+  if (!state.touched) { state.touched = true; $('hint').classList.add('is-gone'); }
+  wake();
+});
+
+stage.addEventListener('pointermove', (event) => {
+  const pointer = state.pointer;
+  if (pointer.down && event.pointerId !== pointer.id) return;
+  toWorld(event);
+  pointer.inside = true;
+  if (!pointer.down) return;
+  sim.moveGrab(pointer.x, pointer.y);
+  sim.pusher.x = pointer.x;
+  sim.pusher.y = pointer.y;
+});
+
+function endPointer(event) {
+  const pointer = state.pointer;
+  if (!pointer.down || event.pointerId !== pointer.id) return;
+  pointer.down = false;
+  sim.release();
+  sim.pusher.active = false;
+  stage.classList.remove('is-holding');
+}
+stage.addEventListener('pointerup', endPointer);
+stage.addEventListener('pointercancel', endPointer);
+stage.addEventListener('pointerleave', () => { if (!state.pointer.down) state.pointer.inside = false; });
+
+function pour() {
+  const pointer = state.pointer;
+  if (!pointer.down || state.tool !== 'pour') return;
+  for (let k = 0; k < 4; k += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const reach = Math.sqrt(Math.random()) * 9;
+    if (sim.addParticle(pointer.x + Math.cos(angle) * reach, pointer.y + Math.sin(angle) * reach, 0, .6) < 0) return;
+  }
+}
+
+// ---------- density field ----------
+const CELL = 2.5;
+const SPLAT = 17;
+const FIELD_MAX = 12;
+const THRESHOLD = 1;
+const BULK_BLUR = 6;
+let fieldCols = 0;
+let fieldRows = 0;
+let fine = new Float32Array(0);
+let bulk = new Float32Array(0);
+let scratch = new Float32Array(0);
+let texels = new Uint8Array(0);
+
+function sizeField() {
+  fieldCols = Math.ceil(worldWidth / CELL);
+  fieldRows = Math.ceil(worldHeight / CELL);
+  const cells = fieldCols * fieldRows;
+  fine = new Float32Array(cells);
+  bulk = new Float32Array(cells);
+  scratch = new Float32Array(cells);
+  texels = new Uint8Array(cells * 4);
+}
+
+function blurLines(source, target, lines, length, lineStride, cellStride, reach) {
+  const scale = 1 / (reach * 2 + 1);
+  for (let line = 0; line < lines; line += 1) {
+    const base = line * lineStride;
+    let sum = source[base] * (reach + 1);
+    for (let k = 1; k <= reach; k += 1) sum += source[base + Math.min(length - 1, k) * cellStride];
+    for (let i = 0; i < length; i += 1) {
+      target[base + i * cellStride] = sum * scale;
+      sum += source[base + Math.min(length - 1, i + reach + 1) * cellStride] - source[base + Math.max(0, i - reach) * cellStride];
+    }
+  }
+}
+
+function rasterize() {
+  fine.fill(0);
+  const reach = SPLAT / CELL;
+  const inverse = 1 / (reach * reach);
+  const { x, y, count } = sim;
+  for (let i = 0; i < count; i += 1) {
+    const gx = x[i] / CELL - .5;
+    const gy = y[i] / CELL - .5;
+    const x0 = Math.max(0, Math.ceil(gx - reach));
+    const x1 = Math.min(fieldCols - 1, Math.floor(gx + reach));
+    const y0 = Math.max(0, Math.ceil(gy - reach));
+    const y1 = Math.min(fieldRows - 1, Math.floor(gy + reach));
+    for (let cy = y0; cy <= y1; cy += 1) {
+      const dy2 = (cy - gy) * (cy - gy);
+      const row = cy * fieldCols;
+      for (let cx = x0; cx <= x1; cx += 1) {
+        const falloff = 1 - ((cx - gx) * (cx - gx) + dy2) * inverse;
+        if (falloff > 0) fine[row + cx] += falloff * falloff;
+      }
+    }
+  }
+  const cells = fieldCols * fieldRows;
+  for (let c = 0; c < cells; c += 1) bulk[c] = Math.min(1, fine[c] / 3.6);
+  for (let pass = 0; pass < 3; pass += 1) {
+    blurLines(bulk, scratch, fieldRows, fieldCols, fieldCols, 1, BULK_BLUR);
+    blurLines(scratch, bulk, fieldCols, fieldRows, 1, fieldCols, BULK_BLUR);
+  }
+  for (let c = 0, t = 0; c < cells; c += 1, t += 4) {
+    const body = Math.min(65535, fine[c] * (65535 / FIELD_MAX)) | 0;
+    const soft = Math.min(65535, bulk[c] * 65535) | 0;
+    texels[t] = body >> 8;
+    texels[t + 1] = body & 255;
+    texels[t + 2] = soft >> 8;
+    texels[t + 3] = soft & 255;
+  }
+}
+
+// ---------- surface shader ----------
+const VERTEX = `
+attribute vec2 aCorner;
+varying vec2 vUv;
+void main() {
+  vUv = vec2(aCorner.x * .5 + .5, .5 - aCorner.y * .5);
+  gl_Position = vec4(aCorner, 0., 1.);
+}`;
+
+const FRAGMENT = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uField;
+uniform vec2 uTexel;
+uniform vec2 uScale;
+uniform float uCellsPerPixel;
+uniform float uThreshold;
+uniform float uNight;
+uniform float uOpacity;
+uniform vec3 uLight;
+uniform vec3 uDeep;
+
+float body(vec2 p) { vec4 t = texture2D(uField, p); return (t.r * 65280. + t.g * 255.) / 65535.; }
+float bulk(vec2 p) { vec4 t = texture2D(uField, p); return (t.b * 65280. + t.a * 255.) / 65535.; }
+
+void main() {
+  vec2 p = vUv * uScale;
+  vec2 ex = vec2(uTexel.x, 0.);
+  vec2 ey = vec2(0., uTexel.y);
+  float f = body(p);
+  float w = bulk(p);
+  vec2 edgeSlope = .5 * vec2(body(p + ex) - body(p - ex), body(p + ey) - body(p - ey));
+  vec2 domeSlope = .25 * vec2(bulk(p + ex * 2.) - bulk(p - ex * 2.), bulk(p + ey * 2.) - bulk(p - ey * 2.));
+
+  float blur = max(length(edgeSlope) * uCellsPerPixel * .75, .0004);
+  float cover = smoothstep(uThreshold - blur, uThreshold + blur, f);
+  float bevel = smoothstep(uThreshold, uThreshold * 2.8, f);
+  float dome = smoothstep(.42, 1., w);
+  float thick = clamp(.6 * bevel + .5 * dome, 0., 1.);
+
+  vec3 normal = normalize(vec3(-(edgeSlope * 15. * (1. - bevel) + domeSlope * 22.), 1.));
+  vec3 light = normalize(vec3(-.48, -.64, .6));
+  vec3 halfway = normalize(light + vec3(0., 0., 1.));
+  float lit = dot(normal, light);
+  float gloss = max(dot(normal, halfway), 0.);
+
+  vec3 color = mix(uLight, uDeep, thick * .88);
+  color *= .72 + .46 * lit;
+  // Light that crossed the gel leaves on the far side as a bright rim.
+  float exitRim = max(dot(normal.xy, -normalize(light.xy)), 0.) * (1. - bevel);
+  color += uLight * exitRim * .55;
+  color += vec3(1.) * (pow(gloss, 42.) * .3 + pow(gloss, 260.) * .75);
+  color = mix(color, color * 1.12 + uLight * .1, uNight * .6);
+
+  float alpha = cover * mix(.74, .96, thick) * uOpacity;
+  float shadow = smoothstep(.08, .95, bulk(p - vec2(4., 7.) * uTexel)) * mix(.17, .34, uNight) * uOpacity;
+  vec3 shadowColor = mix(vec3(.16, .27, .22), vec3(0., .01, .04), uNight);
+  float halo = uNight * w * .3 * uOpacity;
+  vec3 under = shadowColor * shadow * (1. - halo) + uLight * halo;
+  float underAlpha = shadow + halo - shadow * halo;
+  gl_FragColor = vec4(color * alpha + under * (1. - alpha), alpha + underAlpha * (1. - alpha));
+}`;
+
+let gl = null;
+let program = null;
+let uniforms = {};
+let fieldTexture = null;
+
+function compile(type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) || 'shader failed');
+  return shader;
+}
+
+function startSurface() {
+  try {
+    gl = surface.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true });
+    if (!gl) return;
+    program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, VERTEX));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAGMENT));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || 'link failed');
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const corner = gl.getAttribLocation(program, 'aCorner');
+    gl.enableVertexAttribArray(corner);
+    gl.vertexAttribPointer(corner, 2, gl.FLOAT, false, 0, 0);
+    uniforms = {};
+    for (const name of ['uField', 'uTexel', 'uScale', 'uCellsPerPixel', 'uThreshold', 'uNight', 'uOpacity', 'uLight', 'uDeep']) {
+      uniforms[name] = gl.getUniformLocation(program, name);
+    }
+    fieldTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, fieldTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  } catch (error) {
+    console.warn('Slime lab: falling back to the plain renderer.', error);
+    gl = null;
+  }
+}
+
+surface.addEventListener('webglcontextlost', (event) => { event.preventDefault(); gl = null; });
+surface.addEventListener('webglcontextrestored', startSurface);
+
+function rgb(hex) {
+  return [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
+}
+
+let nightBlend = state.theme === 'night' ? 1 : 0;
+let modelBlend = 0;
+
+function drawSurface() {
+  if (!gl) return;
+  rasterize();
+  const palette = palettes[state.palette];
+  gl.viewport(0, 0, surface.width, surface.height);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fieldCols, fieldRows, 0, gl.RGBA, gl.UNSIGNED_BYTE, texels);
+  gl.uniform1i(uniforms.uField, 0);
+  gl.uniform2f(uniforms.uTexel, 1 / fieldCols, 1 / fieldRows);
+  gl.uniform2f(uniforms.uScale, worldWidth / (fieldCols * CELL), worldHeight / (fieldRows * CELL));
+  gl.uniform1f(uniforms.uCellsPerPixel, worldWidth / CELL / surface.width);
+  gl.uniform1f(uniforms.uThreshold, THRESHOLD / FIELD_MAX);
+  gl.uniform1f(uniforms.uNight, nightBlend);
+  gl.uniform1f(uniforms.uOpacity, 1 - modelBlend * .72);
+  gl.uniform3fv(uniforms.uLight, rgb(palette.light));
+  gl.uniform3fv(uniforms.uDeep, rgb(palette.deep));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ---------- overlay: face, tools, model view ----------
+const face = { ready: false, x: 0, y: 0, alpha: 0, lookX: 0, lookY: 0, blink: 0, nextBlink: 2 };
+const FACE_REACH = 70;
+
+function updateFace(seconds) {
+  const { x, y, count, density } = sim;
+  let sumX = 0, sumY = 0, near = 0;
+  if (face.ready) {
+    const reach2 = FACE_REACH * FACE_REACH;
+    for (let i = 0; i < count; i += 1) {
+      const dx = x[i] - face.x;
+      const dy = y[i] - face.y;
+      if (dx * dx + dy * dy < reach2) { sumX += x[i]; sumY += y[i]; near += 1; }
+    }
+  }
+  if (near < 24) {
+    // Lost the body: jump to the densest spot.
+    let best = -1;
+    for (let i = 0; i < count; i += 1) if (best < 0 || density[i] > density[best]) best = i;
+    if (best < 0) { face.alpha = 0; face.ready = false; return; }
+    face.x = x[best];
+    face.y = y[best];
+    face.ready = true;
+    face.alpha = 0;
+    return;
+  }
+  const follow = 1 - Math.exp(-seconds * 14);
+  face.x += (sumX / near - face.x) * follow;
+  face.y += (sumY / near - face.y) * follow;
+  const visible = state.showFace && near >= 70 ? 1 : 0;
+  face.alpha += (visible - face.alpha) * (1 - Math.exp(-seconds * 8));
+
+  let lookX = 0, lookY = 0;
+  if (state.pointer.inside) {
+    const dx = state.pointer.x - face.x;
+    const dy = state.pointer.y - face.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const amount = Math.min(1, distance / 60) * 2.3;
+    lookX = dx / distance * amount;
+    lookY = dy / distance * amount;
+  }
+  face.lookX += (lookX - face.lookX) * follow;
+  face.lookY += (lookY - face.lookY) * follow;
+
+  face.nextBlink -= seconds;
+  if (face.nextBlink <= 0) { face.blink = .16; face.nextBlink = 2.2 + Math.random() * 3.5; }
+  face.blink = Math.max(0, face.blink - seconds);
+}
+
+function drawFace() {
+  if (face.alpha < .02) return;
+  const night = nightBlend > .5;
+  const startled = sim.grabbed > 0;
+  const lid = face.blink > 0 && !startled ? .12 : 1;
+  const cx = face.x + face.lookX * .6;
+  const cy = face.y - 5 + face.lookY * .6;
+  draw.save();
+  draw.globalAlpha = face.alpha * (1 - modelBlend * .8);
+  for (const side of [-1, 1]) {
+    const ex = cx + side * 13;
+    draw.fillStyle = night ? '#0b1726' : '#1f3a31';
+    draw.beginPath();
+    draw.ellipse(ex, cy, startled ? 5.2 : 4.6, (startled ? 6.8 : 6.2) * lid, 0, 0, Math.PI * 2);
+    draw.fill();
+    if (lid === 1) {
+      draw.fillStyle = '#ffffffe6';
+      draw.beginPath();
+      draw.arc(ex - 1.3 + face.lookX * .5, cy - 2.2 + face.lookY * .5, 1.7, 0, Math.PI * 2);
+      draw.fill();
+    }
+  }
+  draw.strokeStyle = night ? '#0b1726' : '#1f3a31';
+  draw.fillStyle = draw.strokeStyle;
+  draw.lineWidth = 1.7;
+  draw.lineCap = 'round';
+  draw.beginPath();
+  if (startled) {
+    draw.ellipse(cx, cy + 10.5, 2.6, 3.2, 0, 0, Math.PI * 2);
+    draw.fill();
+  } else {
+    draw.arc(cx, cy + 6.5, 4.4, Math.PI * .18, Math.PI * .82);
+    draw.stroke();
+  }
+  draw.restore();
+}
+
+function drawModel() {
+  if (modelBlend < .02) return;
+  const { x, y, vx, vy, count, springCount, springA, springB, springRest } = sim;
+  const ink = nightBlend > .5 ? '224,234,243' : '35,62,53';
+  draw.save();
+  draw.globalAlpha = modelBlend;
+  draw.lineWidth = .45;
+  const slack = new Path2D();
+  const taut = new Path2D();
+  for (let s = 0; s < springCount; s += 1) {
+    const i = springA[s];
+    const j = springB[s];
+    const stretched = Math.hypot(x[j] - x[i], y[j] - y[i]) > springRest[s] * 1.3;
+    const path = stretched ? taut : slack;
+    path.moveTo(x[i], y[i]);
+    path.lineTo(x[j], y[j]);
+  }
+  draw.strokeStyle = `rgba(${ink},.28)`;
+  draw.stroke(slack);
+  draw.strokeStyle = 'rgba(234,120,60,.75)';
+  draw.stroke(taut);
+  const calm = new Path2D();
+  const fast = new Path2D();
+  for (let i = 0; i < count; i += 1) {
+    const path = vx[i] * vx[i] + vy[i] * vy[i] > .5 ? fast : calm;
+    path.moveTo(x[i] + 1.4, y[i]);
+    path.arc(x[i], y[i], 1.4, 0, Math.PI * 2);
+  }
+  draw.fillStyle = `rgba(${ink},.8)`;
+  draw.fill(calm);
+  draw.fillStyle = 'rgba(234,120,60,.95)';
+  draw.fill(fast);
+  draw.restore();
+}
+
+function drawPlainBody() {
+  const { x, y, count } = sim;
+  const body = new Path2D();
+  for (let i = 0; i < count; i += 1) {
+    body.moveTo(x[i] + 6.5, y[i]);
+    body.arc(x[i], y[i], 6.5, 0, Math.PI * 2);
+  }
+  draw.save();
+  draw.globalAlpha = .92 - modelBlend * .7;
+  draw.fillStyle = palettes[state.palette].deep;
+  draw.fill(body);
+  draw.restore();
+}
+
+function drawTool() {
+  const pointer = state.pointer;
+  if (!pointer.down) return;
+  const ink = nightBlend > .5 ? '224,234,243' : '35,62,53';
+  draw.save();
+  draw.lineWidth = 1.2;
+  if (sim.pusher.active) {
+    draw.strokeStyle = `rgba(${ink},.45)`;
+    draw.fillStyle = `rgba(${ink},.06)`;
+    draw.beginPath();
+    draw.arc(pointer.x, pointer.y, sim.pusher.radius - 3, 0, Math.PI * 2);
+    draw.fill();
+    draw.stroke();
+  } else if (state.tool === 'pour') {
+    draw.strokeStyle = `rgba(${ink},.4)`;
+    draw.setLineDash([3, 4]);
+    draw.beginPath();
+    draw.arc(pointer.x, pointer.y, 11, 0, Math.PI * 2);
+    draw.stroke();
+  }
+  draw.restore();
+}
+
+function drawOverlay() {
+  const scale = overlay.width / worldWidth;
+  draw.setTransform(1, 0, 0, 1, 0, 0);
+  draw.clearRect(0, 0, overlay.width, overlay.height);
+  draw.setTransform(scale, 0, 0, scale, 0, 0);
+  if (!gl) drawPlainBody();
+  drawModel();
+  drawFace();
+  drawTool();
+}
+
+// ---------- layout ----------
+function resize() {
+  const rect = stage.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return;
+  const ratio = Math.min(2, window.devicePixelRatio || 1);
+  const aspect = rect.width / rect.height;
+  worldWidth = Math.sqrt(WORLD_AREA * aspect);
+  worldHeight = worldWidth / aspect;
+  for (const canvas of [surface, overlay]) {
+    canvas.width = Math.max(2, Math.round(rect.width * ratio));
+    canvas.height = Math.max(2, Math.round(rect.height * ratio));
+  }
+  sim.setBounds(worldWidth, worldHeight);
+  sizeField();
+}
+
+// ---------- loop ----------
+let lastFrame = 0;
+let backlog = 0;
+let lastReadout = 0;
+let frames = 0;
+let frameRate = 0;
+
+function frame(now) {
+  const seconds = Math.min(.05, lastFrame ? (now - lastFrame) / 1000 : 0);
+  lastFrame = now;
+  if (!state.paused) {
+    backlog += seconds;
+    let steps = 0;
+    while (backlog >= STEP_SECONDS && steps < 5) {
+      if (steps === 0) pour();
+      sim.step();
+      backlog -= STEP_SECONDS;
+      steps += 1;
+    }
+    if (steps === 5) backlog = 0;
+  }
+  const ease = 1 - Math.exp(-seconds * 7);
+  nightBlend += ((state.theme === 'night' ? 1 : 0) - nightBlend) * (reduceMotion ? 1 : ease);
+  modelBlend += ((state.showModel ? 1 : 0) - modelBlend) * (reduceMotion ? 1 : ease);
+  updateFace(seconds);
+  drawSurface();
+  drawOverlay();
+
+  frames += 1;
+  if (now - lastReadout > 500) {
+    if (lastReadout) frameRate = Math.round(frames * 1000 / (now - lastReadout));
+    frames = 0;
+    lastReadout = now;
+    $('readout').textContent = `${sim.count} ${text('particles')} · ${sim.springCount} ${text('springs')} · ${frameRate} fps`;
+  }
+  requestAnimationFrame(frame);
+}
+
+document.documentElement.dataset.theme = state.theme;
+startSurface();
+resize();
+new ResizeObserver(resize).observe(stage);
+resetSlime();
+if (reduceMotion) {
+  // Show a settled slime and wait for the visitor to start it.
+  for (let s = 0; s < 1200; s += 1) sim.step();
+  state.paused = true;
+}
+syncSliders();
+applyLanguage();
+syncPressed();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
